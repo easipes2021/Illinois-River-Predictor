@@ -3,6 +3,33 @@ import numpy as np
 import json
 import os
 
+import pandas as pd
+
+def merge_datasets():
+    # 1. Load the Files
+    # (Make sure these filenames match exactly what your fetch scripts save)
+    master_df = pd.read_csv('illinois_river_network.csv', index_col=0, parse_dates=True)
+    regional_df = pd.read_csv('regional_precip.csv', index_col=0, parse_dates=True)
+
+    # 2. Fix the Timezone Mismatch (The "Naive" Fix)
+    # This prevents the "Cannot join tz-naive with tz-aware" error
+    if master_df.index.tz is not None:
+        master_df.index = master_df.index.tz_localize(None)
+    
+    if regional_df.index.tz is not None:
+        regional_df.index = regional_df.index.tz_localize(None)
+
+    # 3. Perform the Join
+    # We resample the rain data to 1-hour chunks to match the river gauges
+    combined_df = master_df.join(regional_df.resample('1h').sum(), how='left')
+    
+    # 4. Save the Final Product for the AI
+    combined_df.to_csv('master_training_data.csv')
+    print("✅ Master dataset merged and saved.")
+
+if __name__ == "__main__":
+    merge_datasets()
+
 def apply_sskp_rating(H, meta):
     """
     Implements the Piecewise Power Law with Continuity Adjustment.
