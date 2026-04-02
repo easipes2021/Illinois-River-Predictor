@@ -6,7 +6,7 @@ STATIONS = {
     'osage_creek': '07195000',
     'hwy_16': '07195400',
     'hwy_59': '07195430',
-    'lake_francis': '07195450',
+    'lake_francis': '07195495',
     'watts_ok': '07195500'
 }
 
