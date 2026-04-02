@@ -3,57 +3,14 @@ import numpy as np
 import json
 import os
 
-import pandas as pd
-
-import os
-
-# Get the directory the script is running in
-base_path = os.path.dirname(os.path.abspath(__file__))
-file_path = os.path.join(base_path, 'regional_precip_actual.csv')
-
-# Use file_path for both saving and reading:
-# Saving: df.to_csv(file_path)
-# Reading: pd.read_csv(file_path, ...)
-
-import os
-print(f"Current directory: {os.getcwd()}")
-print(f"Files in directory: {os.listdir('.')}")
-
-def merge_datasets():
-    # 1. Load the Files
-    # (Make sure these filenames match exactly what your fetch scripts save)
-    master_df = pd.read_csv('illinois_river_network.csv', index_col=0, parse_dates=True)
-    regional_df = pd.read_csv('regional_precip_actual.csv', index_col=0, parse_dates=True)
-
-    # 2. Fix the Timezone Mismatch (The "Naive" Fix)
-    # This prevents the "Cannot join tz-naive with tz-aware" error
-    if master_df.index.tz is not None:
-        master_df.index = master_df.index.tz_localize(None)
-    
-    if regional_df.index.tz is not None:
-        regional_df.index = regional_df.index.tz_localize(None)
-
-    # 3. Perform the Join
-    # We resample the rain data to 1-hour chunks to match the river gauges
-    combined_df = master_df.join(regional_df.resample('1h').sum(), how='left')
-    
-    # 4. Save the Final Product for the AI
-    combined_df.to_csv('master_training_data.csv')
-    print("✅ Master dataset merged and saved.")
-
-if __name__ == "__main__":
-    merge_datasets()
-
 def apply_sskp_rating(H, meta):
     """
     Implements the Piecewise Power Law with Continuity Adjustment.
-    H: Gage Height (ft)
-    meta: Dictionary containing A, B coefficients and breakpoint
     """
     if pd.isna(H) or H <= 0:
         return 0
     
-    bp = meta['piecewise_breakpoint']
+    bp = meta.get('piecewise_breakpoint', 2.5)
     
     # Low Branch: Q = A * H^B
     low_q = meta['low_flow']['A'] * (np.power(H, meta['low_flow']['B']))
@@ -64,7 +21,7 @@ def apply_sskp_rating(H, meta):
     # High Branch: Q = A * H^B
     high_q = meta['high_flow']['A'] * (np.power(H, meta['high_flow']['B']))
     
-    # Continuity Adjustment (Ensures no 'jump' at the breakpoint)
+    # Continuity Adjustment
     low_at_break = meta['low_flow']['A'] * (np.power(bp, meta['low_flow']['B']))
     high_at_break = meta['high_flow']['A'] * (np.power(bp, meta['high_flow']['B']))
     
@@ -74,67 +31,67 @@ def apply_sskp_rating(H, meta):
     return high_q * scale_factor
 
 def merge_datasets():
-    print("🔄 Starting Data Merge with Regional Precipitation...")
-    
-    # Load Main Data
+    print("🔄 Starting Data Merge...")
+
+    # 1. Load Files
+    if not os.path.exists('illinois_river_network.csv') or not os.path.exists('weather_forecast.csv'):
+        print("❌ Critical data files missing. Check fetch scripts.")
+        return
+
     river_df = pd.read_csv('illinois_river_network.csv', index_col=0, parse_dates=True)
-    weather_df = pd.read_csv('weather_forecast.csv', index_col='timestamp', parse_dates=True)
+    weather_df = pd.read_csv('weather_forecast.csv', index_col=0, parse_dates=True)
     
-    # NEW: Load Regional Actuals
-    if os.path.exists('regional_precip_actual.csv'):
-        regional_df = pd.read_csv('regional_precip_actual.csv', index_col=0, parse_dates=True)
+    # Use the filename that actually exists on your GitHub Runner
+    precip_file = 'regional_precip_actual.csv'
+    if os.path.exists(precip_file):
+        regional_df = pd.read_csv(precip_file, index_col=0, parse_dates=True)
+        print(f"✅ Found {precip_file}")
     else:
+        print(f"⚠️ {precip_file} not found. Creating empty DataFrame.")
         regional_df = pd.DataFrame()
 
-    # Resample and Join
-    master_df = river_df.resample('1h').mean().join(weather_df.resample('1h').sum(), how='left')
-    
-    if not regional_df.empty:
-        master_df = master_df.join(regional_df.resample('1h').sum(), how='left')
+    # 2. FIX: Standardize Timezones (Make everything "Naive")
+    for df in [river_df, weather_df, regional_df]:
+        if not df.empty and df.index.tz is not None:
+            df.index = df.index.tz_localize(None)
 
-    # Fill all precip columns with 0
-    precip_cols = [c for c in master_df.columns if 'precip_' in c]
-    master_df[precip_cols] = master_df[precip_cols].fillna(0)
-
-    # ... (Keep your Rating Curve and Feature logic here) ...
-    # Add a unique Soil Saturation index for EACH station if you want to be extra precise:
-    for col in precip_cols:
-        master_df[f'{col}_saturation'] = master_df[col].rolling(window=72, min_periods=1).sum()
-
-    master_df.to_csv('master_training_data.csv')
-    print(f"🚀 Success! Master dataset updated with {len(precip_cols)} rain stations.")
-
-    # 2. Standardize Time & Resample
-    river_df.index = pd.to_datetime(river_df.index)
-    weather_df.index = pd.to_datetime(weather_df.index)
-    
+    # 3. Resample to Hourly
     river_hourly = river_df.resample('1h').mean()
     weather_hourly = weather_df.resample('1h').sum()
     
-    # 3. Join into Master DataFrame
+    # 4. Join Data
     master_df = river_hourly.join(weather_hourly, how='left')
     
-    # 4. FIX: Add Seasonal Cycle (Required by predict_all.py)
+    if not regional_df.empty:
+        regional_hourly = regional_df.resample('1h').sum()
+        master_df = master_df.join(regional_hourly, how='left')
+
+    # 5. Fill Missing Rain with 0
+    precip_cols = [c for c in master_df.columns if 'precip_' in c]
+    master_df[precip_cols] = master_df[precip_cols].fillna(0)
+
+    # 6. Feature Engineering: Seasonal Cycle & Saturation
     master_df['day_of_year'] = master_df.index.dayofyear
     master_df['seasonal_cycle'] = np.sin(2 * np.pi * master_df['day_of_year'] / 365)
     
-    # 5. Weather & Soil Saturation
-    master_df['precip_expected_mm'] = master_df.get('precip_expected_mm', 0).fillna(0)
-    master_df['soil_saturation_index'] = master_df['precip_expected_mm'].rolling(window=48, min_periods=1).sum()
-    
-    # 6. River Trends
+    # Soil Saturation (Rolling 72h)
+    for col in precip_cols:
+        master_df[f'{col}_saturation'] = master_df[col].rolling(window=72, min_periods=1).sum()
+
+    # 7. River Trends & Lake Headroom
     if 'savoy_height' in master_df.columns:
         master_df['savoy_trend'] = master_df['savoy_height'].diff().fillna(0)
+    
+    if 'lake_francis_height' in master_df.columns:
+        master_df['lake_headroom'] = (911.0 - master_df['lake_francis_height']).clip(lower=0)
     else:
-        master_df['savoy_trend'] = 0
+        master_df['lake_headroom'] = 0
 
-    # 7. Apply SSKP Rating Curve for Hwy 59
+    # 8. Apply Rating Curve for Hwy 59
     if os.path.exists('rating_curve_metadata.json'):
         with open('rating_curve_metadata.json', 'r') as f:
             meta = json.load(f)
-        print("✅ Using custom SSKP Rating Curve metadata.")
     else:
-        print("⚠️ Metadata missing. Using calibrated defaults for Hwy 59.")
         meta = {
             "piecewise_breakpoint": 2.5,
             "low_flow": {"A": 38.5, "B": 1.85},
@@ -143,38 +100,12 @@ def merge_datasets():
 
     if 'hwy_59_height' in master_df.columns:
         master_df['hwy_59_flow_est'] = master_df['hwy_59_height'].apply(lambda x: apply_sskp_rating(x, meta))
-        
-        # Diagnostic Print
-        valid_heights = master_df['hwy_59_height'].dropna()
-        if not valid_heights.empty:
-            last_h = valid_heights.iloc[-1]
-            last_f = master_df['hwy_59_flow_est'].loc[valid_heights.index[-1]]
-            print(f"📍 RATING CHECK: {last_h:.2f} ft -> {last_f:.2f} CFS")
-    
-    # 8. FIX: Add Lake Headroom (Required by predict_all.py)
-    # Using 911.0 ft as the standard spillway elevation
-    if 'lake_francis_height' in master_df.columns:
-        master_df['lake_headroom'] = (911.0 - master_df['lake_francis_height']).clip(lower=0)
-    else:
-        print("⚠️ 'lake_francis_height' missing. Headroom set to 0.")
-        master_df['lake_headroom'] = 0
 
-    # Load the new regional data
-    regional_precip = pd.read_csv('regional_precip_actual.csv', index_col=0, parse_dates=True)
-    
-    # Join it to the master dataframe
-    master_df = master_df.join(regional_precip.resample('1h').sum(), how='left')
-    
-    # Fill missing values with 0
-    precip_cols = [c for c in master_df.columns if 'precip_' in c]
-    master_df[precip_cols] = master_df[precip_cols].fillna(0)
-
-    # 9. Final Cleanup & Save
-    # Ensure we don't have empty trailing rows from the join
+    # 9. Cleanup and Save
     master_df = master_df.dropna(subset=['hwy_59_height', 'watts_ok_height'], how='all')
-    
     master_df.to_csv('master_training_data.csv')
-    print(f"🚀 Success! Master dataset saved with {len(master_df)} records.")
+    
+    print(f"🚀 Success! Master dataset saved with {len(master_df)} rows and {len(precip_cols)} rain sources.")
 
 if __name__ == "__main__":
     merge_datasets()
