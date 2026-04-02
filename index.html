@@ -44,11 +44,11 @@
             complete: function(results) {
                 const latest = results.data[results.data.length - 2]; // Get last valid row
                 const html = `
-                    <div class="reading"><span class="label">Savoy (Main Stem)</span><span class="value">${parseFloat(latest.savoy_height).toFixed(1)}<span class="unit">CFS</span></span></div>
+                    <div class="reading"><span class="label">Savoy (Main Stem)</span><span class="value">${parseFloat(latest.savoy_height).toFixed(2)}<span class="unit">CFS</span></span></div>
                     <div class="reading"><span class="label">Osage Creek</span><span class="value">${parseFloat(latest.osage_creek_flow).toFixed(0)}<span class="unit">CFS</span></span></div>
                     <div class="reading"><span class="label">Hwy 59 Bridge</span><span class="value">${parseFloat(latest.hwy_59_flow_est).toFixed(0)}<span class="unit">CFS</span></span></div>
                     <div class="reading"><span class="label">Lake Francis</span><span class="value">${parseFloat(latest.lake_francis_height).toFixed(2)}<span class="unit">FT</span></span></div>
-                    <div class="reading"><span class="label">Watts, OK</span><span class="value">${parseFloat(latest.watts_ok_height).toFixed(1)}<span class="unit">CFS</span></span></div>
+                    <div class="reading"><span class="label">Watts, OK</span><span class="value">${parseFloat(latest.watts_ok_height).toFixed(3)}<span class="unit">CFS</span></span></div>
                 `;
                 document.getElementById('readings-list').innerHTML = html;
             }
