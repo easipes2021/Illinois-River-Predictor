@@ -33,15 +33,35 @@ def apply_sskp_rating(H, meta):
     return high_q * scale_factor
 
 def merge_datasets():
-    print("🔄 Starting Data Merge & Rating Calibration...")
+    print("🔄 Starting Data Merge with Regional Precipitation...")
     
-    # 1. Load Source Files
-    try:
-        river_df = pd.read_csv('illinois_river_network.csv', index_col=0, parse_dates=True)
-        weather_df = pd.read_csv('weather_forecast.csv', index_col='timestamp', parse_dates=True)
-    except Exception as e:
-        print(f"❌ Error loading CSV files: {e}")
-        return
+    # Load Main Data
+    river_df = pd.read_csv('illinois_river_network.csv', index_col=0, parse_dates=True)
+    weather_df = pd.read_csv('weather_forecast.csv', index_col='timestamp', parse_dates=True)
+    
+    # NEW: Load Regional Actuals
+    if os.path.exists('regional_precip_actual.csv'):
+        regional_df = pd.read_csv('regional_precip_actual.csv', index_col=0, parse_dates=True)
+    else:
+        regional_df = pd.DataFrame()
+
+    # Resample and Join
+    master_df = river_df.resample('1h').mean().join(weather_df.resample('1h').sum(), how='left')
+    
+    if not regional_df.empty:
+        master_df = master_df.join(regional_df.resample('1h').sum(), how='left')
+
+    # Fill all precip columns with 0
+    precip_cols = [c for c in master_df.columns if 'precip_' in c]
+    master_df[precip_cols] = master_df[precip_cols].fillna(0)
+
+    # ... (Keep your Rating Curve and Feature logic here) ...
+    # Add a unique Soil Saturation index for EACH station if you want to be extra precise:
+    for col in precip_cols:
+        master_df[f'{col}_saturation'] = master_df[col].rolling(window=72, min_periods=1).sum()
+
+    master_df.to_csv('master_training_data.csv')
+    print(f"🚀 Success! Master dataset updated with {len(precip_cols)} rain stations.")
 
     # 2. Standardize Time & Resample
     river_df.index = pd.to_datetime(river_df.index)
