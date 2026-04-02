@@ -17,8 +17,25 @@ jobs:
         run: pip install pandas numpy requests scipy scikit-learn
       - name: Run Pipeline
         run: |
-          chmod +x update_model.sh
-          ./update_model.sh
+          echo "--- Step 1: River Gauges ---"
+          python3 fetch_all_gauges.py
+          
+          echo "--- Step 2: Regional Precip ---"
+          python3 fetch_nwa_precip.py
+          
+          echo "--- Step 3: Weather Forecast ---"
+          python3 fetch_weather.py
+          
+          echo "--- Step 4: Merge & Rating ---"
+          python3 merge_data.py
+          
+          echo "--- Step 5: AI Training ---"
+          python3 predict_all.py
+          
+          echo "--- Step 6: Final Dashboard ---"
+          python3 forecast_now.py
+        env:
+          PYTHONUNBUFFERED: 1
       - name: Commit and Push results
         run: |
           git config --global user.name 'River-Bot'
