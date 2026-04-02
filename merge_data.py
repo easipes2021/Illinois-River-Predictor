@@ -9,7 +9,7 @@ import os
 
 # Get the directory the script is running in
 base_path = os.path.dirname(os.path.abspath(__file__))
-file_path = os.path.join(base_path, 'regional_precip.csv')
+file_path = os.path.join(base_path, 'regional_precip_actual.csv')
 
 # Use file_path for both saving and reading:
 # Saving: df.to_csv(file_path)
@@ -23,7 +23,7 @@ def merge_datasets():
     # 1. Load the Files
     # (Make sure these filenames match exactly what your fetch scripts save)
     master_df = pd.read_csv('illinois_river_network.csv', index_col=0, parse_dates=True)
-    regional_df = pd.read_csv('regional_precip.csv', index_col=0, parse_dates=True)
+    regional_df = pd.read_csv('regional_precip_actual.csv', index_col=0, parse_dates=True)
 
     # 2. Fix the Timezone Mismatch (The "Naive" Fix)
     # This prevents the "Cannot join tz-naive with tz-aware" error
