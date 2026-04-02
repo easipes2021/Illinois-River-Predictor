@@ -5,6 +5,20 @@ import os
 
 import pandas as pd
 
+import os
+
+# Get the directory the script is running in
+base_path = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(base_path, 'regional_precip.csv')
+
+# Use file_path for both saving and reading:
+# Saving: df.to_csv(file_path)
+# Reading: pd.read_csv(file_path, ...)
+
+import os
+print(f"Current directory: {os.getcwd()}")
+print(f"Files in directory: {os.listdir('.')}")
+
 def merge_datasets():
     # 1. Load the Files
     # (Make sure these filenames match exactly what your fetch scripts save)

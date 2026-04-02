@@ -51,3 +51,41 @@ def generate_multi_forecast():
 
 if __name__ == "__main__":
     generate_multi_forecast()
+
+import pandas as pd
+from datetime import datetime
+
+def generate_forecast_report():
+    # Load the latest master data to get current readings
+    df = pd.read_csv('master_training_data.csv')
+    latest_row = df.iloc[-1]
+    
+    # Define the current value that was causing the error
+    current_59 = latest_row['hwy_59_height'] 
+    
+    # Mocking predictions for this example - ensure your model fills these
+    predictions = {
+        'savoy': 2.45,
+        'hwy_59': 3.10, 
+        'lake_francis': 2.15,
+        'watts': 3.40
+    }
+
+    with open('forecast_report.txt', 'w') as f:
+        f.write("--- 6-HOUR AI FORECAST ---\n")
+        f.write(f"Updated: {datetime.now().strftime('%m/%d %H:%M')} CST\n")
+        f.write("--------------------------\n")
+        
+        for loc, val in predictions.items():
+            f.write(f"{loc.upper()}: {val:.2f} FT\n")
+        
+        # Now current_59 is defined and will work:
+        if predictions['hwy_59'] > (current_59 + 0.05):
+            f.write("\nTREND: 📈 RISING")
+        elif predictions['hwy_59'] < (current_59 - 0.05):
+            f.write("\nTREND: 📉 FALLING")
+        else:
+            f.write("\nTREND: ↔️ STABLE")
+
+if __name__ == "__main__":
+    generate_forecast_report()
