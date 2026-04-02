@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Illinois River Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #eee; padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        h1 { color: #4dabf7; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .card { background: #2d2d2d; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .reading { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #3d3d3d; }
+        .label { color: #adb5bd; }
+        .value { font-weight: bold; color: #fff; }
+        .unit { font-size: 0.8em; color: #868e96; margin-left: 4px; }
+        .prediction-box { white-space: pre-wrap; font-family: monospace; background: #000; padding: 10px; border-radius: 4px; color: #51cf66; }
+        .status-tag { font-size: 0.7em; background: #2b8a3e; padding: 2px 8px; border-radius: 10px; float: right; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>River Dashboard <span class="status-tag">LIVE</span></h1>
+        
+        <div class="card">
+            <h3>Current Gauge Readings</h3>
+            <div id="readings-list">Loading latest data...</div>
+        </div>
+
+        <div class="card">
+            <h3>6-Hour Predictions</h3>
+            <div id="predictions-content" class="prediction-box">Loading AI forecast...</div>
+        </div>
+
+        <p style="text-align: center; font-size: 0.8em; color: #666;">Data updates every 30 mins via GitHub Actions</p>
+    </div>
+
+    <script>
+        // 1. Fetch Current Readings from CSV
+        Papa.parse("master_training_data.csv", {
+            download: true,
+            header: true,
+            complete: function(results) {
+                const latest = results.data[results.data.length - 2]; // Get last valid row
+                const html = `
+                    <div class="reading"><span class="label">Savoy (Main Stem)</span><span class="value">${parseFloat(latest.savoy_height).toFixed(2)}<span class="unit">FT</span></span></div>
+                    <div class="reading"><span class="label">Osage Creek</span><span class="value">${parseFloat(latest.osage_creek_flow).toFixed(0)}<span class="unit">CFS</span></span></div>
+                    <div class="reading"><span class="label">Hwy 59 Bridge</span><span class="value">${parseFloat(latest.hwy_59_flow_est).toFixed(0)}<span class="unit">CFS</span></span></div>
+                    <div class="reading"><span class="label">Lake Francis</span><span class="value">${parseFloat(latest.lake_francis_height).toFixed(2)}<span class="unit">FT</span></span></div>
+                    <div class="reading"><span class="label">Watts, OK</span><span class="value">${parseFloat(latest.watts_ok_height).toFixed(2)}<span class="unit">FT</span></span></div>
+                `;
+                document.getElementById('readings-list').innerHTML = html;
+            }
+        });
+
+        // 2. Fetch Prediction Text
+        fetch('forecast_report.txt')
+            .then(response => response.text())
+            .then(text => {
+                document.getElementById('predictions-content').textContent = text;
+            });
+    </script>
+</body>
+</html>
