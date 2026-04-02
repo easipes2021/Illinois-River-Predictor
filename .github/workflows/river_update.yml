@@ -1,0 +1,28 @@
+name: Illinois River Auto-Predictor
+on:
+  schedule:
+    - cron: '*/30 * * * *' # Runs every 30 minutes
+  workflow_dispatch:      # Allows you to run it manually
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install pandas numpy requests scipy scikit-learn
+      - name: Run Pipeline
+        run: |
+          chmod +x update_model.sh
+          ./update_model.sh
+      - name: Commit and Push results
+        run: |
+          git config --global user.name 'River-Bot'
+          git config --global user.email 'bot@illinoisriver.ai'
+          git add .
+          git commit -m "Auto-update: $(date)" || echo "No changes"
+          git push
