@@ -1,45 +1,47 @@
-name: Illinois River Auto-Predictor
+# Manual Sync Trigger: 2026-04-02-v1
+
+name: Illinois River Auto-Update
+
 on:
   schedule:
-    - cron: '*/30 * * * *' # Runs every 30 minutes
-  workflow_dispatch:      # Allows you to run it manually
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
 jobs:
-  build:
+  update-river-data:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - name: Install dependencies
-        run: pip install pandas numpy requests scipy scikit-learn
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy requests scipy scikit-learn dataretrieval
+
       - name: Run Pipeline
         run: |
-          echo "--- Step 1: River Gauges ---"
           python3 fetch_all_gauges.py
-          
-          echo "--- Step 2: Regional Precip ---"
           python3 fetch_nwa_precip.py
-          
-          echo "--- Step 3: Weather Forecast ---"
           python3 fetch_weather.py
-          
-          echo "--- Step 4: Merge & Rating ---"
           python3 merge_data.py
-          
-          echo "--- Step 5: AI Training ---"
           python3 predict_all.py
-          
-          echo "--- Step 6: Final Dashboard ---"
           python3 forecast_now.py
         env:
           PYTHONUNBUFFERED: 1
-      - name: Commit and Push results
+
+      - name: Commit and Push Results
         run: |
-          git config --global user.name 'River-Bot'
+          git config --global user.name 'Illinois-River-Bot'
           git config --global user.email 'bot@illinoisriver.ai'
           git add .
-          git commit -m "Auto-update: $(date)" || echo "No changes"
+          git commit -m "Automated River Update: $(date)" || echo "No changes to commit"
           git push
