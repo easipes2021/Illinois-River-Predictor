@@ -2,24 +2,33 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 import joblib
+import os
 
 def train_multi_models():
+    if not os.path.exists('master_training_data.csv'):
+        print("❌ Error: master_training_data.csv not found. Run merge_data.py first.")
+        return
+
     df = pd.read_csv('master_training_data.csv', index_col=0, parse_dates=True)
     
-    # 1. Define our 4 Targets (6 hours into the future)
+    # 1. Define 4 Targets (6 hours into the future)
+    # CHANGED: Swapped watts_ok_height to watts_ok_flow
     targets = {
         'hwy_16_flow': 'target_hwy16_6h',
-        'hwy_59_flow_est': 'target_hwy59_6h', # Our new estimated flow
-        'lake_francis_height': 'target_lake_6h',
-        'watts_ok_height': 'target_watts_6h'
+        'hwy_59_flow_est': 'target_hwy59_6h', 
+        'lake_francis_height': 'target_lake_6h', # Keep as height per your request
+        'watts_ok_flow': 'target_watts_6h'     # Changed to Flow
     }
 
-    # 2. Create the future "truth" columns for the AI to learn from
+    # 2. Create the future "truth" columns
     for col, target_name in targets.items():
         if col in df.columns:
             df[target_name] = df[col].shift(-6)
+        else:
+            print(f"⚠️ Warning: {col} not found in CSV. Skipping target.")
 
-    # 3. Features (The inputs the AI uses)
+    # 3. Features (Inputs)
+    # MUST match exactly what merge_data.py outputs
     features = [
         'savoy_height', 
         'osage_creek_flow', 
@@ -28,29 +37,33 @@ def train_multi_models():
         'precip_springdale', 
         'precip_bentonville', 
         'precip_siloam',
-        'precip_fayetteville_saturation', # New saturation features
+        'precip_fayetteville_saturation', 
         'seasonal_cycle',
         'lake_headroom'
     ]
 
-    # 4. Train a specific model for each location
-    models = {}
+    # 4. Train and Save
     for col, target_name in targets.items():
-        if col in df.columns:
+        if target_name in df.columns:
             print(f"Training model for {col}...")
+            
+            # Drop rows where either features or the target are NaN
             df_clean = df.dropna(subset=[target_name] + features)
             
+            if df_clean.empty:
+                print(f"❌ Not enough data to train {col}. Check for NaNs.")
+                continue
+
             X = df_clean[features]
             y = df_clean[target_name]
             
             model = RandomForestRegressor(n_estimators=100, random_state=42)
             model.fit(X, y)
-            models[col] = model
             
-            # Save each model individually
+            # Save using the original column name so the UI knows which is which
             joblib.dump(model, f'model_{col}.pkl')
 
-    print("Success: All 4 models trained and saved.")
+    print("✅ Success: All models trained and saved as .pkl files.")
 
 if __name__ == "__main__":
     train_multi_models()
