@@ -10,7 +10,10 @@ def train_multi_models():
         return
 
     df = pd.read_csv('master_training_data.csv', index_col=0, parse_dates=True)
-    
+    # FILL GAPS: Copy the last known value forward to fill holes
+    df = df.ffill().bfill()
+
+
     # 1. Define 4 Targets (6 hours into the future)
     # CHANGED: Swapped watts_ok_height to watts_ok_flow
     targets = {
@@ -64,6 +67,23 @@ def train_multi_models():
             joblib.dump(model, f'model_{col}.pkl')
 
     print("✅ Success: All models trained and saved as .pkl files.")
+
+
+    models = {}
+    for col, target_name in targets.items():
+        if col in df.columns:
+            # THIS IS THE LINE THAT DELETES DATA:
+            df_clean = df.dropna(subset=[target_name] + features)
+            
+            # --- ADD THIS CHECK HERE ---
+            print(f"📊 DATA CHECK for {col}:")
+            print(f"   Original rows: {len(df)}")
+            print(f"   Rows after dropping NaNs: {len(df_clean)}")
+            # ---------------------------
+
+            if len(df_clean) < 10:
+                print(f"   ❌ Skipping {col}: Not enough clean rows.")
+                continue
 
 if __name__ == "__main__":
     train_multi_models()
