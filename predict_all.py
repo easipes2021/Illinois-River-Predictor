@@ -48,13 +48,14 @@ def train_multi_models():
     # 4. Train and Save
     for col, target_name in targets.items():
         if target_name in df.columns:
-            print(f"Training model for {col}...")
-            
             # Drop rows where either features or the target are NaN
             df_clean = df.dropna(subset=[target_name] + features)
             
-            if df_clean.empty:
-                print(f"❌ Not enough data to train {col}. Check for NaNs.")
+            # Keep these prints so you can see what's happening
+            print(f"📊 DATA CHECK for {col}: {len(df_clean)} clean rows.")
+
+            if len(df_clean) < 10:
+                print(f"❌ Skipping {col}: Not enough data.")
                 continue
 
             X = df_clean[features]
@@ -63,10 +64,8 @@ def train_multi_models():
             model = RandomForestRegressor(n_estimators=100, random_state=42)
             model.fit(X, y)
             
-            # Save using the original column name so the UI knows which is which
             joblib.dump(model, f'model_{col}.pkl')
-
-    print("✅ Success: All models trained and saved as .pkl files.")
+            print(f"✅ Model saved: model_{col}.pkl"))
 
 
     models = {}
