@@ -65,7 +65,7 @@ def train_multi_models():
             model.fit(X, y)
             
             joblib.dump(model, f'model_{col}.pkl')
-            print(f"✅ Model saved: model_{col}.pkl"))
+            print(f"✅ Model saved: model_{col}.pkl")
 
 
     models = {}
