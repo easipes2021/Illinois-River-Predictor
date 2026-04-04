@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timedelta
 import pytz
 import numpy as np
+import json
 
 def generate_multi_forecast():
     if not os.path.exists('master_training_data.csv'):
@@ -59,33 +60,42 @@ def generate_multi_forecast():
 
     forecast_results = {}
 
+    forecast_results = {
+        "timestamp": local_time.strftime('%Y-%m-%d %I:%M %p')
+    }
+
     for key, (label, unit) in locations.items():
         model_path = f'model_{key}.pkl'
         if os.path.exists(model_path):
             try:
                 model = joblib.load(model_path)
-                # Ensure we only pass the features the model expects
+                
+                # 1. Get the Prediction from the AI
                 pred = model.predict(current_row[features])[0]
-                current_val = current_row[key].values[0] if key in current_row.columns else np.nan
                 
-                display_val = f"{current_val:.2f}" if not pd.isna(current_val) else "OFFLINE"
+                # 2. Get the Current Value from the CSV row
+                # We use .item() to ensure it's a standard Python float, not a numpy object
+                current_val = current_row[key].iloc[0] if key in current_row.columns else 0.0
                 
-                print(f"{label}:")
-                print(f"   Current:   {display_val:>8} {unit}")
-                print(f"   Projected: {pred:>8.2f} {unit} (at {forecast_time.strftime('%I:%M %p')})")
-                print("-" * 55)
+                # 3. STRUCTURE THE DATA FOR THE WEBSITE (This is the fix!)
+                forecast_results[key] = {
+                    "current": round(float(current_val), 2),
+                    "projected": round(float(pred), 2)
+                }
                 
-                # Save for the website JSON
-                forecast_results[key] = round(float(pred), 2)
+                # Console Logging
+                print(f"{label}: {current_val:.2f} -> {pred:.2f} {unit}")
+
             except Exception as e:
                 print(f"   [!] Error predicting {label}: {e}")
         else:
-            print(f"   [!] Model for {label} (.pkl) not found. Run predict_all.py.")
+            print(f"   [!] Model for {label} (.pkl) not found.")
 
-    # Save the JSON for your website to stop the "Loading" state
-    import json
+    # 4. Save the nested JSON
     with open('forecasts.json', 'w') as f:
-        json.dump(forecast_results, f)
+        json.dump(forecast_results, f, indent=4)
+    
+    print("✅ Web Dashboard Updated with Nested Data.")
 
 if __name__ == "__main__":
     generate_multi_forecast()
