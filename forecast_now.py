@@ -3,6 +3,7 @@ import joblib
 import os
 from datetime import datetime, timedelta
 import pytz
+import numpy as np
 
 def generate_multi_forecast():
     if not os.path.exists('master_training_data.csv'):
@@ -20,13 +21,24 @@ def generate_multi_forecast():
     
     # MUST MATCH predict_all.py FEATURES EXACTLY
     features = [
+        # --- Current Levels ---
         'savoy_height', 
         'osage_creek_flow', 
         'hwy_59_height',
+        
+        # --- Lagged Features (The "Lookback" for Upstream Rise) ---
+        'savoy_height_3h_ago', 
+        'savoy_height_6h_ago', 
+        'osage_creek_flow_3h_ago', 
+        'osage_creek_flow_6h_ago',
+        
+        # --- Rainfall Data ---
         'precip_fayetteville', 
         'precip_springdale', 
         'precip_bentonville', 
         'precip_siloam',
+        
+        # --- Soil & Seasonal Logic ---
         'precip_fayetteville_saturation', 
         'seasonal_cycle',
         'lake_headroom'
