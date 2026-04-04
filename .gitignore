@@ -1,1 +1,21 @@
 venv/
+
+# Ignore all data files to prevent GitHub Actions and Local conflicts
+*.csv
+*.pkl
+forecasts.json
+
+# Ignore Python system files
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Tell Git to stop tracking the files currently in its memory
+git rm --cached master_training_data.csv
+git rm --cached model_*.pkl
+git rm --cached forecasts.json
+
+# Commit the new rules
+git add .gitignore
+git commit -m "Ignoring data and models to prevent merge conflicts"
+git push origin main
