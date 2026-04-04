@@ -31,7 +31,7 @@ def apply_sskp_rating(H, meta):
     return high_q * scale_factor
 
 def merge_datasets():
-    print("🔄 Starting Data Merge...")
+    print("🔄 Starting Data Merge with Lagged Trends...")
 
     # 1. Load Files
     if not os.path.exists('illinois_river_network.csv') or not os.path.exists('weather_forecast.csv'):
@@ -41,7 +41,6 @@ def merge_datasets():
     river_df = pd.read_csv('illinois_river_network.csv', index_col=0, parse_dates=True)
     weather_df = pd.read_csv('weather_forecast.csv', index_col=0, parse_dates=True)
     
-    # Use the filename that actually exists on your GitHub Runner
     precip_file = 'regional_precip_actual.csv'
     if os.path.exists(precip_file):
         regional_df = pd.read_csv(precip_file, index_col=0, parse_dates=True)
@@ -50,7 +49,7 @@ def merge_datasets():
         print(f"⚠️ {precip_file} not found. Creating empty DataFrame.")
         regional_df = pd.DataFrame()
 
-    # 2. FIX: Standardize Timezones (Make everything "Naive")
+    # 2. Standardize Timezones
     for df in [river_df, weather_df, regional_df]:
         if not df.empty and df.index.tz is not None:
             df.index = df.index.tz_localize(None)
@@ -74,11 +73,18 @@ def merge_datasets():
     master_df['day_of_year'] = master_df.index.dayofyear
     master_df['seasonal_cycle'] = np.sin(2 * np.pi * master_df['day_of_year'] / 365)
     
-    # Soil Saturation (Rolling 72h)
     for col in precip_cols:
         master_df[f'{col}_saturation'] = master_df[col].rolling(window=72, min_periods=1).sum()
 
-    # 7. River Trends & Lake Headroom
+    # 7. NEW: Lagged Features (The "Lookback" for Upstream Rise)
+    # This captures the wave moving downriver from Savoy/Osage
+    upstream_cols = ['savoy_height', 'osage_creek_flow']
+    for col in upstream_cols:
+        if col in master_df.columns:
+            master_df[f'{col}_3h_ago'] = master_df[col].shift(3)
+            master_df[f'{col}_6h_ago'] = master_df[col].shift(6)
+
+    # 8. River Trends & Lake Headroom
     if 'savoy_height' in master_df.columns:
         master_df['savoy_trend'] = master_df['savoy_height'].diff().fillna(0)
     
@@ -87,7 +93,7 @@ def merge_datasets():
     else:
         master_df['lake_headroom'] = 0
 
-    # 8. Apply Rating Curve for Hwy 59
+    # 9. Apply Rating Curve for Hwy 59
     if os.path.exists('rating_curve_metadata.json'):
         with open('rating_curve_metadata.json', 'r') as f:
             meta = json.load(f)
@@ -101,11 +107,11 @@ def merge_datasets():
     if 'hwy_59_height' in master_df.columns:
         master_df['hwy_59_flow_est'] = master_df['hwy_59_height'].apply(lambda x: apply_sskp_rating(x, meta))
 
-    # 9. Cleanup and Save
+    # 10. Cleanup and Save
     master_df = master_df.dropna(subset=['hwy_59_height', 'watts_ok_height'], how='all')
     master_df.to_csv('master_training_data.csv')
     
-    print(f"🚀 Success! Master dataset saved with {len(master_df)} rows and {len(precip_cols)} rain sources.")
+    print(f"🚀 Success! Master dataset saved with lagged features.")
 
 if __name__ == "__main__":
     merge_datasets()

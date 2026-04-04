@@ -10,48 +10,57 @@ def train_multi_models():
         return
 
     df = pd.read_csv('master_training_data.csv', index_col=0, parse_dates=True)
-    # FILL GAPS: Copy the last known value forward to fill holes
+    
+    # 1. FILL GAPS: Ensures missing sensor readings don't delete entire rows
     df = df.ffill().bfill()
 
-
-    # 1. Define 4 Targets (6 hours into the future)
-    # CHANGED: Swapped watts_ok_height to watts_ok_flow
+    # 2. Define 4 Targets (6 hours into the future)
     targets = {
         'hwy_16_flow': 'target_hwy16_6h',
         'hwy_59_flow_est': 'target_hwy59_6h', 
-        'lake_francis_height': 'target_lake_6h', # Keep as height per your request
-        'watts_ok_flow': 'target_watts_6h'     # Changed to Flow
+        'lake_francis_height': 'target_lake_6h',
+        'watts_ok_flow': 'target_watts_6h'
     }
 
-    # 2. Create the future "truth" columns
+    # 3. Create the future "truth" columns (Shift -6 hours)
     for col, target_name in targets.items():
         if col in df.columns:
             df[target_name] = df[col].shift(-6)
         else:
             print(f"⚠️ Warning: {col} not found in CSV. Skipping target.")
 
-    # 3. Features (Inputs)
+    # 4. Features: The AI's "Eyes"
     # MUST match exactly what merge_data.py outputs
     features = [
+        # --- Current Levels ---
         'savoy_height', 
         'osage_creek_flow', 
         'hwy_59_height',
+        
+        # --- Lagged Features (The "Wave Detector") ---
+        'savoy_height_3h_ago', 
+        'savoy_height_6h_ago', 
+        'osage_creek_flow_3h_ago', 
+        'osage_creek_flow_6h_ago',
+        
+        # --- Rainfall Data ---
         'precip_fayetteville', 
         'precip_springdale', 
         'precip_bentonville', 
         'precip_siloam',
+        
+        # --- Soil & Seasonal Logic ---
         'precip_fayetteville_saturation', 
         'seasonal_cycle',
         'lake_headroom'
     ]
 
-    # 4. Train and Save
+    # 5. Train and Save
     for col, target_name in targets.items():
         if target_name in df.columns:
             # Drop rows where either features or the target are NaN
             df_clean = df.dropna(subset=[target_name] + features)
             
-            # Keep these prints so you can see what's happening
             print(f"📊 DATA CHECK for {col}: {len(df_clean)} clean rows.")
 
             if len(df_clean) < 10:
@@ -61,28 +70,16 @@ def train_multi_models():
             X = df_clean[features]
             y = df_clean[target_name]
             
-            model = RandomForestRegressor(n_estimators=100, random_state=42)
+            # Training the model
+            # 150 trees helps the AI better understand these complex lag patterns
+            model = RandomForestRegressor(n_estimators=150, random_state=42)
             model.fit(X, y)
             
+            # Save the model
             joblib.dump(model, f'model_{col}.pkl')
             print(f"✅ Model saved: model_{col}.pkl")
 
-
-    models = {}
-    for col, target_name in targets.items():
-        if col in df.columns:
-            # THIS IS THE LINE THAT DELETES DATA:
-            df_clean = df.dropna(subset=[target_name] + features)
-            
-            # --- ADD THIS CHECK HERE ---
-            print(f"📊 DATA CHECK for {col}:")
-            print(f"   Original rows: {len(df)}")
-            print(f"   Rows after dropping NaNs: {len(df_clean)}")
-            # ---------------------------
-
-            if len(df_clean) < 10:
-                print(f"   ❌ Skipping {col}: Not enough clean rows.")
-                continue
+    print("🚀 Success: All AI models updated with lagged trend features.")
 
 if __name__ == "__main__":
     train_multi_models()
