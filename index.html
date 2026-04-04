@@ -3,70 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Illinois River Dashboard</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <title>Illinois River Predictor | WOKA Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #eee; padding: 20px; }
-        .container { max-width: 600px; margin: auto; }
-        h1 { color: #4dabf7; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        .card { background: #2d2d2d; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .reading { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #3d3d3d; }
-        .label { color: #adb5bd; }
-        .value { font-weight: bold; color: #fff; }
-        .unit { font-size: 0.8em; color: #868e96; margin-left: 4px; }
-        .prediction-box { white-space: pre-wrap; font-family: monospace; background: #000; padding: 10px; border-radius: 4px; color: #51cf66; }
-        .status-tag { font-size: 0.7em; background: #2b8a3e; padding: 2px 8px; border-radius: 10px; float: right; }
+        .river-card { border-left: 4px solid #3b82f6; }
+        .trend-up { color: #ef4444; }
+        .trend-down { color: #10b981; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>River Dashboard <span class="status-tag">LIVE</span></h1>
-        
-        <div class="card">
-            <h3>Current Gauge Readings</h3>
-            <div id="readings-list">Loading latest data...</div>
-        </div>
+<body class="bg-slate-900 text-white font-sans min-h-screen">
 
-        <div class="card">
-            <h3>6-Hour Predictions</h3>
-            <div id="predictions-content" class="prediction-box">Loading AI forecast...</div>
-        </div>
+    <div class="max-w-4xl mx-auto p-4 sm:p-8">
+        <header class="mb-8 border-b border-slate-700 pb-4">
+            <h1 class="text-3xl font-bold">Illinois River Predictor</h1>
+            <p class="text-slate-400">AI-Powered Flow & Level Dashboard</p>
+            <p id="update-time" class="text-xs text-blue-400 mt-2 uppercase tracking-widest font-semibold">Updating...</p>
+        </header>
 
-        <p style="text-align: center; font-size: 0.8em; color: #666;">Data updates every 30 mins via GitHub Actions</p>
-        <div class="card">
+        <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </div>
+
+        <footer class="mt-12 text-center text-slate-500 text-sm">
+            <p>Data refreshed hourly via USGS & NWS. AI model updates daily.</p>
+        </footer>
     </div>
 
     <script>
-        // 1. Fetch Current Readings from CSV
-        Papa.parse("master_training_data.csv", {
-            download: true,
-            header: true,
-            complete: function(results) {
-                const latest = results.data[results.data.length - 2]; // Get last valid row
-                const html = `
-                    <div class="reading"><span class="label">Savoy (Main Stem)</span><span class="value">${parseFloat(latest.savoy_height).toFixed(2)}<span class="unit">CFS</span></span></div>
-                    <div class="reading"><span class="label">Osage Creek</span><span class="value">${parseFloat(latest.osage_creek_flow).toFixed(0)}<span class="unit">CFS</span></span></div>
-                    <div class="reading"><span class="label">Hwy 59 Bridge</span><span class="value">${parseFloat(latest.hwy_59_flow_est).toFixed(0)}<span class="unit">CFS</span></span></div>
-                    <div class="reading"><span class="label">Lake Francis</span><span class="value">${parseFloat(latest.lake_francis_height).toFixed(2)}<span class="unit">FT</span></span></div>
-                    <div class="reading"><span class="label">Watts, OK</span><span class="value">${parseFloat(latest.watts_ok_height).toFixed(3)}<span class="unit">CFS</span></span></div>
-                `;
-                document.getElementById('readings-list').innerHTML = html;
-            }
-        });
+        // CONFIGURATION: Match your Python keys exactly
+        const GAUGE_MAP = {
+            'hwy_16_flow': { name: 'Hwy 16 (Siloam)', unit: 'CFS' },
+            'hwy_59_flow_est': { name: 'Hwy 59 (AR Bridge)', unit: 'EST. CFS' },
+            'lake_francis_height': { name: 'Lake Francis', unit: 'ft (MSL)' },
+            'watts_ok_flow': { name: 'Watts Bridge (OK)', unit: 'CFS' }
+        };
 
-        // 2. Fetch Prediction Text
-        fetch('forecast_report.txt')
-            .then(response => {
-                if (!response.ok) throw new Error('Forecast file not found');
-                return response.text();
-            })
-            .then(text => {
-                // Clean up any weird characters and display
-                document.getElementById('predictions-content').innerText = text;
-            })
-            .catch(err => {
-                document.getElementById('predictions-content').innerText = "Awaiting next AI sync...";
-            });
+        // WOKA SETTINGS
+        const WOKA_RATIO = 0.22; // Adjust this based on your gate observations!
+
+        async function fetchForecasts() {
+            try {
+                // Fetch the JSON generated by forecast_now.py
+                const response = await fetch('forecasts.json');
+                const data = await response.json();
+                
+                const container = document.getElementById('dashboard');
+                container.innerHTML = ''; // Clear loading state
+
+                // Update Timestamp
+                document.getElementById('update-time').innerText = `Last Update: ${data.timestamp || 'Just Now'}`;
+
+                // Loop through our specific gauges
+                for (const [key, meta] of Object.entries(GAUGE_MAP)) {
+                    if (data[key]) {
+                        createCard(container, meta.name, data[key], meta.unit);
+                    }
+                }
+
+                // ADD SPECIAL WOKA CARD (Calculated from Watts)
+                if (data.watts_ok_flow) {
+                    const wokaData = {
+                        current: data.watts_ok_flow.current * WOKA_RATIO,
+                        projected: data.watts_ok_flow.projected * WOKA_RATIO
+                    };
+                    createCard(container, '🌊 WOKA Whitewater Park', wokaData, 'CFS (EST)');
+                }
+
+            } catch (err) {
+                console.error("Dashboard Sync Error:", err);
+                document.getElementById('dashboard').innerHTML = `<p class="text-red-400 col-span-full">Error loading forecasts. Check if forecasts.json exists.</p>`;
+            }
+        }
+
+        function createCard(parent, title, vals, unit) {
+            const diff = vals.projected - vals.current;
+            const trendClass = diff >= 0 ? 'trend-up' : 'trend-down';
+            const trendIcon = diff >= 0 ? '▲' : '▼';
+
+            const card = document.createElement('div');
+            card.className = 'river-card bg-slate-800 p-6 rounded-lg shadow-xl';
+            card.innerHTML = `
+                <h3 class="text-slate-400 text-sm font-bold uppercase mb-2">${title}</h3>
+                <div class="flex justify-between items-end">
+                    <div>
+                        <p class="text-3xl font-mono">${vals.current.toFixed(1)} <span class="text-sm font-normal text-slate-500">${unit}</span></p>
+                        <p class="text-xs text-slate-500 mt-1">Current Reading</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl font-mono ${trendClass}">${trendIcon} ${vals.projected.toFixed(1)}</p>
+                        <p class="text-xs text-slate-500">6h Projection</p>
+                    </div>
+                </div>
+            `;
+            parent.appendChild(card);
+        }
+
+        // Run on load
+        fetchForecasts();
+        // Refresh every 5 minutes
+        setInterval(fetchForecasts, 300000);
     </script>
 </body>
 </html>
