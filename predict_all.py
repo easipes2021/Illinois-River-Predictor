@@ -72,7 +72,7 @@ def train_multi_models():
             
             # Training the model
             # 150 trees helps the AI better understand these complex lag patterns
-            model = RandomForestRegressor(n_estimators=150, random_state=42)
+            model = RandomForestRegressor(n_estimators=150, min_samples_leaf=1, max_features='sqrt', random_state=42)
             model.fit(X, y)
             
             # Save the model
@@ -80,6 +80,10 @@ def train_multi_models():
             print(f"✅ Model saved: model_{col}.pkl")
 
     print("🚀 Success: All AI models updated with lagged trend features.")
+    # Add this right after model.fit(X, y)
+    importances = pd.Series(model.feature_importances_, index=features)
+    print(f"Top 3 Drivers for {col}:")
+    print(importances.sort_values(ascending=False).head(3))
 
 if __name__ == "__main__":
     train_multi_models()
