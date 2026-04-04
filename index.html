@@ -75,21 +75,24 @@
         }
 
         function createCard(parent, title, vals, unit) {
+            // Determine precision: if it's the Lake (ft), use 2. If it's Flow (CFS), use 1.
+            const precision = unit.includes('ft') ? 2 : 1;
+            
             const diff = vals.projected - vals.current;
             const trendClass = diff >= 0 ? 'trend-up' : 'trend-down';
             const trendIcon = diff >= 0 ? '▲' : '▼';
-
+        
             const card = document.createElement('div');
             card.className = 'river-card bg-slate-800 p-6 rounded-lg shadow-xl';
             card.innerHTML = `
                 <h3 class="text-slate-400 text-sm font-bold uppercase mb-2">${title}</h3>
                 <div class="flex justify-between items-end">
                     <div>
-                        <p class="text-3xl font-mono">${vals.current.toFixed(1)} <span class="text-sm font-normal text-slate-500">${unit}</span></p>
+                        <p class="text-3xl font-mono">${vals.current.toFixed(precision)} <span class="text-sm font-normal text-slate-500">${unit}</span></p>
                         <p class="text-xs text-slate-500 mt-1">Current Reading</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-xl font-mono ${trendClass}">${trendIcon} ${vals.projected.toFixed(1)}</p>
+                        <p class="text-xl font-mono ${trendClass}">${trendIcon} ${vals.projected.toFixed(precision)}</p>
                         <p class="text-xs text-slate-500">6h Projection</p>
                     </div>
                 </div>
