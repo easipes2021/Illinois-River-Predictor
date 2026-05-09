@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import json
 import os
+from train_models import retrain_models
+
 
 def apply_sskp_rating(H, meta):
     """
@@ -107,11 +109,51 @@ def merge_datasets():
     if 'hwy_59_height' in master_df.columns:
         master_df['hwy_59_flow_est'] = master_df['hwy_59_height'].apply(lambda x: apply_sskp_rating(x, meta))
 
-    # 10. Cleanup and Save
+    # 10. Cleanup and Save (REPLACE YOUR OLD STEP 10 WITH THIS)
     master_df = master_df.dropna(subset=['hwy_59_height', 'watts_ok_height'], how='all')
-    master_df.to_csv('master_training_data.csv')
+    
+    # NEW: Append to existing file instead of overwriting
+    if os.path.exists('master_training_data.csv'):
+        old_df = pd.read_csv('master_training_data.csv', index_col=0, parse_dates=True, date_format='%Y-%m-%d %H:%M:%S')
+        # Combine and keep only the most recent unique data
+        combined_df = pd.concat([old_df, master_df]).drop_duplicates()
+        # Keep only the last 30 days of hourly data to prevent the file from growing forever
+        combined_df.to_csv('master_training_data.csv')
+    else:
+        master_df.to_csv('master_training_data.csv')
+    
+    print(f"🚀 Success! Master dataset appended and saved.")
     
     print(f"🚀 Success! Master dataset saved with lagged features.")
+
+    # ... all your existing logic ...
+    
+    # 10. Cleanup and Save
+    master_df = master_df.dropna(subset=['hwy_59_height', 'watts_ok_height'], how='all')
+    master_df.to_csv('master_training_data.csv', index=False)
+    
+    print(f"🚀 Success! Master dataset saved with lagged features.")
+    
+    # THIS IS THE SPOT: It must be indented to match the 'print' line above
+    return master_df
+
+if __name__ == "__main__":
+    # 1. Run the merge
+    master_df = merge_datasets()
+    
+    # 2. Now that master_df exists, we can safely check its length
+    # Note: merge_datasets needs to 'return master_df' for this to work
+    if master_df is not None and len(master_df) % 100 == 0:
+        print("🧠 Data threshold met—Retraining models...")
+        # from train_models import retrain_models # Uncomment this
+        # retrain_models()
+
+# Check if it's time to retrain (e.g., every 100 new entries)
+# This is a basic way to trigger a "Learning Event"
+if len(master_df) % 100 == 0:
+    print("🧠 Data threshold met—Retraining models...")
+    # Add a function call here to your training script
+    retrain_models()
 
 if __name__ == "__main__":
     merge_datasets()
