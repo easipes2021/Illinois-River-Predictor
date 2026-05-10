@@ -47,6 +47,6 @@ jobs:
         run: |
           git config --global user.name 'Illinois-River-Bot'
           git config --global user.email 'bot@illinoisriver.ai'
-          git add forecasts.json
+          git add forecasts.json history.json
           git diff --cached --quiet || git commit -m "Automated River Update: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           git push origin HEAD:main

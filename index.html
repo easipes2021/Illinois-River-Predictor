@@ -5,81 +5,238 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Illinois River Predictor | WOKA Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .river-card { border-left: 4px solid #3b82f6; }
+        <style>
+        .river-card { border-left: 4px solid; }
         .trend-up { color: #10b981; }
         .trend-down { color: #ef4444; }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans min-h-screen">
 
-    <div class="max-w-4xl mx-auto p-4 sm:p-8">
+    <div class="max-w-6xl mx-auto p-4 sm:p-8">
         <header class="mb-8 border-b border-slate-700 pb-4">
-            <h1 class="text-3xl font-bold">Illinois River Predictor</h1>
-            <p class="text-slate-400">AI-Powered Flow & Level Dashboard</p>
-            <p id="update-time" class="text-xs text-blue-400 mt-2 uppercase tracking-widest font-semibold">Updating...</p>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold">Illinois River Predictor</h1>
+                    <p class="text-slate-400 mt-1">AI-Powered Flow & Level Dashboard</p>
+                </div>
+                <div class="text-right">
+                    <p id="update-time" class="text-xs text-blue-400 uppercase tracking-widest font-semibold">Updating...</p>
+                    <p id="forecast-horizon" class="text-xs text-slate-400 mt-1">Forecast horizon: 6h projection</p>
+                </div>
+            </div>
         </header>
 
-        <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div id="page-message" class="hidden mb-6 rounded-xl p-4 bg-slate-800 text-slate-200 text-sm"></div>
+
+        <div class="grid gap-6 xl:grid-cols-[2fr_1fr]">
+            <div class="space-y-6">
+                <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+                <section class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
+                    <div class="flex items-center justify-between gap-4 mb-5">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Forecast snapshot</p>
+                            <h2 class="text-2xl font-semibold">Active predictions</h2>
+                        </div>
+                        <span class="inline-flex items-center rounded-full bg-slate-900/80 px-3 py-1 text-xs uppercase tracking-[0.3em] text-slate-400">Updated hourly</span>
+                    </div>
+                    <p class="text-sm text-slate-400">This dashboard updates when your pipeline generates new values. If a value is missing, it will show N/A until fresh data is available.</p>
+                </section>
             </div>
+
+            <aside class="space-y-6">
+                <section class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
+                    <h2 class="text-xl font-semibold mb-4">Dashboard Settings</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-sm text-slate-400 mb-2 inline-block">WOKA ratio <span id="woka-ratio-value" class="font-semibold text-slate-100">0.82</span></label>
+                            <input id="woka-slider" type="range" min="0.60" max="1.00" step="0.01" value="0.82" class="w-full accent-sky-400">
+                            <p class="text-xs text-slate-500 mt-2">Use this slider to adjust the estimated WOKA flow scaling from Watts Bridge.</p>
+                        </div>
+                        <div>
+                            <label for="chart-mode" class="text-sm text-slate-400 mb-2 inline-block">Chart view</label>
+                            <select id="chart-mode" class="w-full rounded-2xl bg-slate-900 border border-slate-700 p-3 text-slate-100">
+                                <option value="compare">Compare Hwy 16 + Hwy 59</option>
+                                <option value="hwy_16_flow">Hwy 16 (Siloam)</option>
+                                <option value="hwy_59_flow_est">Hwy 59 (AR Bridge)</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
+                    <h2 class="text-xl font-semibold mb-4">Quick tips</h2>
+                    <ul class="space-y-3 text-sm text-slate-400">
+                        <li>• WOKA values are estimated from Watts Bridge flow using the selected multiplier.</li>
+                        <li>• The chart shows the last 24 hourly observations for selected river gauges.</li>
+                        <li>• Forecasts are generated every hour and pushed to the dashboard automatically.</li>
+                    </ul>
+                </section>
+            </aside>
+        </div>
+
+        <section class="mt-8 bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-5">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Observed history</p>
+                    <h2 class="text-2xl font-semibold">Recent gauge trend</h2>
+                </div>
+                <div class="text-sm text-slate-400">Data snapshot: <span id="history-update">Loading...</span></div>
+            </div>
+            <div class="relative h-96">
+                <canvas id="historyChart" class="w-full h-full"></canvas>
+                <p id="history-message" class="absolute inset-0 hidden items-center justify-center rounded-3xl bg-slate-900/80 text-center text-slate-400 p-4"></p>
+            </div>
+        </section>
 
         <footer class="mt-12 text-center text-slate-500 text-sm">
             <p>Data refreshed hourly via USGS & NWS. AI model updates daily.</p>
         </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script>
-        // CONFIGURATION: Match your Python keys exactly
         const GAUGE_MAP = {
-            'hwy_16_flow': { name: 'Hwy 16 (Siloam)', unit: 'CFS' },
-            'hwy_59_flow_est': { name: 'Hwy 59 (AR Bridge)', unit: 'EST. CFS' },
-            'lake_francis_height': { name: 'Lake Francis', unit: 'ft (MSL)' },
-            'watts_ok_flow': { name: 'Watts Bridge (OK)', unit: 'CFS' }
+            'hwy_16_flow': { name: 'Hwy 16 (Siloam)', unit: 'CFS', color: '#38bdf8' },
+            'hwy_59_flow_est': { name: 'Hwy 59 (AR Bridge)', unit: 'EST. CFS', color: '#f97316' },
+            'lake_francis_height': { name: 'Lake Francis', unit: 'ft (MSL)', color: '#a78bfa' },
+            'watts_ok_flow': { name: 'Watts Bridge (OK)', unit: 'CFS', color: '#22c55e' }
         };
 
-        // WOKA SETTINGS
-        const WOKA_RATIO = 0.82; // Adjust this based on your gate observations!
+        const DEFAULT_SETTINGS = {
+            wokaRatio: 0.82,
+            chartMode: 'compare'
+        };
 
-        async function fetchForecasts() {
-            try {
-                const response = await fetch('./forecasts.json');
-                const data = await response.json();
-                
-                const container = document.getElementById('dashboard');
-                container.innerHTML = ''; // Clear loading state
+        let settings = { ...DEFAULT_SETTINGS };
+        let chartInstance = null;
+        let latestForecast = null;
+        let latestHistory = null;
 
-                document.getElementById('update-time').innerText = `Last Update: ${data.timestamp || 'Just Now'}`;
+        function saveSettings() {
+            localStorage.setItem('riverDashboardSettings', JSON.stringify(settings));
+        }
 
-                let cardsCreated = 0;
-                for (const [key, meta] of Object.entries(GAUGE_MAP)) {
-                    if (data[key] && (data[key].current !== undefined || data[key].projected !== undefined)) {
-                        createCard(container, meta.name, data[key], meta.unit);
-                        cardsCreated += 1;
-                    }
+        function loadSettings() {
+            const saved = localStorage.getItem('riverDashboardSettings');
+            if (saved) {
+                try {
+                    settings = { ...settings, ...JSON.parse(saved) };
+                } catch (err) {
+                    console.warn('Unable to load saved settings', err);
                 }
-
-                if (data.watts_ok_flow && data.watts_ok_flow.projected != null) {
-                    const wokaData = {
-                        current: data.watts_ok_flow.current != null
-                            ? data.watts_ok_flow.current * WOKA_RATIO
-                            : null,
-                        projected: data.watts_ok_flow.projected * WOKA_RATIO
-                    };
-                    createCard(container, '🌊 WOKA Whitewater Park', wokaData, 'CFS (EST)');
-                    cardsCreated += 1;
-                }
-
-                if (cardsCreated === 0) {
-                    container.innerHTML = `<p class="text-slate-400 col-span-full">No forecast data is available right now. The pipeline may be updating.</p>`;
-                }
-
-            } catch (err) {
-                console.error('Dashboard Sync Error:', err);
-                document.getElementById('dashboard').innerHTML = `<p class="text-red-400 col-span-full">Error loading forecasts. Check if forecasts.json exists and the pipeline has run successfully.</p>`;
             }
         }
 
-        function createCard(parent, title, vals, unit) {
+        function updateSettingsUI() {
+            const slider = document.getElementById('woka-slider');
+            const wokaText = document.getElementById('woka-ratio-value');
+            const chartMode = document.getElementById('chart-mode');
+            slider.value = settings.wokaRatio;
+            wokaText.innerText = settings.wokaRatio.toFixed(2);
+            chartMode.value = settings.chartMode;
+        }
+
+        function setWokaRatio(value) {
+            settings.wokaRatio = Number(value);
+            saveSettings();
+            updateSettingsUI();
+            renderForecastCards(latestForecast);
+        }
+
+        function setChartMode(value) {
+            settings.chartMode = value;
+            saveSettings();
+            updateSettingsUI();
+            renderHistoryChart(latestHistory);
+        }
+
+        function showPageMessage(message, type = 'info') {
+            const messageBox = document.getElementById('page-message');
+            messageBox.innerText = message;
+            messageBox.className = `rounded-xl p-4 text-sm ${type === 'error' ? 'bg-rose-900 text-rose-200' : 'bg-slate-800 text-slate-200'}`;
+            messageBox.style.display = 'block';
+        }
+
+        function clearPageMessage() {
+            const messageBox = document.getElementById('page-message');
+            messageBox.style.display = 'none';
+        }
+
+        async function fetchForecasts() {
+            document.getElementById('update-time').innerText = 'Loading latest forecast...';
+            document.getElementById('history-update').innerText = 'Loading...';
+
+            let forecastData = null;
+            let historyData = null;
+
+            try {
+                const forecastResp = await fetch('./forecasts.json');
+                if (!forecastResp.ok) throw new Error('Unable to load forecasts.json');
+                forecastData = await forecastResp.json();
+            } catch (err) {
+                console.error('Forecast fetch error:', err);
+                showPageMessage('Unable to load forecast data. Please refresh the page or check the dashboard feed.', 'error');
+            }
+
+            try {
+                const historyResp = await fetch('./history.json');
+                if (!historyResp.ok) throw new Error('Unable to load history.json');
+                historyData = await historyResp.json();
+            } catch (err) {
+                console.warn('History fetch error:', err);
+            }
+
+            if (forecastData) {
+                latestForecast = forecastData;
+                clearPageMessage();
+                renderForecastCards(forecastData);
+                document.getElementById('update-time').innerText = forecastData.timestamp || 'Just Now';
+                document.getElementById('forecast-horizon').innerText = forecastData.forecast_time ? `Forecast horizon: 6h projection (${forecastData.forecast_time})` : 'Forecast horizon: 6h projection';
+            }
+
+            if (historyData) {
+                latestHistory = historyData;
+                renderHistoryChart(historyData);
+            } else {
+                renderHistoryChart(null);
+            }
+        }
+
+        function renderForecastCards(data) {
+            const container = document.getElementById('dashboard');
+            container.innerHTML = '';
+
+            if (!data) {
+                container.innerHTML = `<p class="text-slate-400 col-span-full">Forecast data is unavailable.</p>`;
+                return;
+            }
+
+            let cardsCreated = 0;
+            for (const [key, meta] of Object.entries(GAUGE_MAP)) {
+                if (data[key]) {
+                    createCard(container, meta.name, data[key], meta.unit, meta.color);
+                    cardsCreated += 1;
+                }
+            }
+
+            if (data.watts_ok_flow && data.watts_ok_flow.projected != null) {
+                const wokaData = {
+                    current: data.watts_ok_flow.current != null ? data.watts_ok_flow.current * settings.wokaRatio : null,
+                    projected: data.watts_ok_flow.projected * settings.wokaRatio
+                };
+                createCard(container, '🌊 WOKA Whitewater Park', wokaData, 'CFS (EST)', '#38d9a9');
+                cardsCreated += 1;
+            }
+
+            if (cardsCreated === 0) {
+                container.innerHTML = `<p class="text-slate-400 col-span-full">No forecast cards could be rendered. The pipeline may still be updating.</p>`;
+            }
+        }
+
+        function createCard(parent, title, vals, unit, accentColor = '#3b82f6') {
             const precision = unit.includes('ft') ? 2 : 1;
             const hasCurrent = vals.current !== null && vals.current !== undefined;
             const hasProjected = vals.projected !== null && vals.projected !== undefined;
@@ -90,26 +247,111 @@
             const trendIcon = hasCurrent && hasProjected ? (diff >= 0 ? '▲' : '▼') : '';
 
             const card = document.createElement('div');
-            card.className = 'river-card bg-slate-800 p-6 rounded-lg shadow-xl';
+            card.className = 'river-card bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700';
+            card.style.borderLeftColor = accentColor;
             card.innerHTML = `
-                <h3 class="text-slate-400 text-sm font-bold uppercase mb-2">${title}</h3>
-                <div class="flex justify-between items-end">
+                <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-3xl font-mono">${currentText} <span class="text-sm font-normal text-slate-500">${unit}</span></p>
-                        <p class="text-xs text-slate-500 mt-1">Current Reading</p>
+                        <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-[0.18em] mb-3">${title}</h3>
+                        <p class="text-4xl font-semibold font-mono">${currentText} <span class="text-sm font-normal text-slate-500">${unit}</span></p>
+                        <p class="text-xs text-slate-500 mt-2">Current reading</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-xl font-mono ${trendClass}">${trendIcon} ${projectedText}</p>
-                        <p class="text-xs text-slate-500">6h Projection</p>
+                        <p class="text-3xl font-semibold font-mono ${trendClass}">${trendIcon} ${projectedText}</p>
+                        <p class="text-xs text-slate-500 mt-2">6h projection</p>
                     </div>
                 </div>
             `;
             parent.appendChild(card);
         }
 
-        // Run on load
+        function renderHistoryChart(data) {
+            const updateNode = document.getElementById('history-update');
+            const canvas = document.getElementById('historyChart');
+            const message = document.getElementById('history-message');
+
+            if (!data || !data.gauges) {
+                canvas.style.display = 'none';
+                message.innerText = 'History data is unavailable. The chart will appear once history.json is generated.';
+                message.style.display = 'flex';
+                updateNode.innerText = '';
+                return;
+            }
+
+            const mode = settings.chartMode;
+            const datasets = [];
+            const availableKeys = ['hwy_16_flow', 'hwy_59_flow_est'];
+
+            availableKeys.forEach(key => {
+                const gauge = data.gauges[key];
+                if (!gauge) return;
+                const points = gauge.history.map(point => ({ x: new Date(point.timestamp), y: point.value }));
+                if (!points.length) return;
+                if (mode === 'compare' || mode === key) {
+                    datasets.push({
+                        label: gauge.name,
+                        data: points,
+                        borderColor: GAUGE_MAP[key]?.color || '#60a5fa',
+                        backgroundColor: 'transparent',
+                        tension: 0.3,
+                        pointRadius: 2,
+                        borderWidth: 2
+                    });
+                }
+            });
+
+            if (!datasets.length) {
+                canvas.style.display = 'none';
+                message.innerText = 'No historical gauge values found for the selected chart view.';
+                message.style.display = 'flex';
+                updateNode.innerText = data.timestamp || '';
+                return;
+            }
+
+            message.style.display = 'none';
+            canvas.style.display = 'block';
+
+            const config = {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'nearest', intersect: false },
+                    plugins: {
+                        legend: { position: 'top', labels: { color: '#cbd5e1' } },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: { unit: 'hour', displayFormats: { hour: 'MMM d ha' } },
+                            grid: { color: 'rgba(148,163,184,0.16)' },
+                            ticks: { color: '#cbd5e1' }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: 'rgba(148,163,184,0.16)' },
+                            ticks: { color: '#cbd5e1' }
+                        }
+                    }
+                }
+            };
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            chartInstance = new Chart(canvas, config);
+            updateNode.innerText = data.timestamp || '';
+        }
+
+        loadSettings();
+        updateSettingsUI();
+
+        document.getElementById('woka-slider').addEventListener('input', event => setWokaRatio(event.target.value));
+        document.getElementById('chart-mode').addEventListener('change', event => setChartMode(event.target.value));
+
         fetchForecasts();
-        // Refresh every 5 minutes
         setInterval(fetchForecasts, 300000);
     </script>
 </body>

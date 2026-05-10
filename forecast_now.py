@@ -1,10 +1,10 @@
 import pandas as pd
 import joblib
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 import pytz
-import numpy as np
 import json
+
 
 def safe_float(value, fallback=None):
     if pd.isna(value):
@@ -19,6 +19,29 @@ def build_feature_row(raw_row, features):
     row = raw_row.reindex(features)
     row = row.astype(float, errors='ignore')
     return row.ffill().fillna(0)
+
+
+def build_gauge_history(df, key, name, unit, window=24):
+    if key not in df.columns:
+        return {'name': name, 'unit': unit, 'history': []}
+
+    recent = df[[key]].tail(window).copy()
+    recent.index = pd.to_datetime(recent.index, utc=True)
+    index_name = recent.index.name or 'timestamp'
+    recent = recent.reset_index()
+
+    return {
+        'name': name,
+        'unit': unit,
+        'history': [
+            {
+                'timestamp': row[index_name].strftime('%Y-%m-%dT%H:%M:%SZ'),
+                'value': safe_float(row[key], None)
+            }
+            for _, row in recent.iterrows()
+            if not pd.isna(row[key])
+        ]
+    }
 
 
 def generate_multi_forecast():
@@ -63,6 +86,12 @@ def generate_multi_forecast():
     forecast_results = {
         'timestamp': local_time.strftime('%Y-%m-%d %I:%M %p'),
         'forecast_time': (local_time + timedelta(hours=6)).strftime('%Y-%m-%d %I:%M %p')
+    }
+
+    history_results = {
+        'timestamp': local_time.strftime('%Y-%m-%d %I:%M %p'),
+        'forecast_time': (local_time + timedelta(hours=6)).strftime('%Y-%m-%d %I:%M %p'),
+        'gauges': {}
     }
 
     last_known_values = {}
@@ -117,8 +146,21 @@ def generate_multi_forecast():
             print(f"   [!] Error predicting {label}: {e}")
             forecast_results[key] = {'current': current_val, 'projected': None}
 
+    history_keys = {
+        'hwy_16_flow': ('Hwy 16 (Siloam)', 'CFS'),
+        'hwy_59_flow_est': ('Hwy 59 (AR Bridge)', 'EST. CFS'),
+        'lake_francis_height': ('Lake Francis Level', 'ft (MSL)'),
+        'watts_ok_flow': ('Watts Bridge (OK)', 'CFS')
+    }
+
+    for key, (label, unit) in history_keys.items():
+        history_results['gauges'][key] = build_gauge_history(df, key, label, unit)
+
     with open('forecasts.json', 'w') as f:
         json.dump(forecast_results, f, indent=4)
+
+    with open('history.json', 'w') as f:
+        json.dump(history_results, f, indent=4)
 
     print("✅ Web Dashboard Updated with Nested Data.")
     print(f"Data status: {df.isnull().sum().sum()} missing values found.")
