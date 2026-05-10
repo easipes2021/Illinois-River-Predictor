@@ -54,6 +54,9 @@ def generate_multi_forecast():
         print("❌ Error: master_training_data.csv is empty.")
         return
 
+    # Fill missing values with previous readings to ensure current readings show up
+    df = df.ffill()
+    
     current_row = df.tail(1).copy()
     utc_time = pd.to_datetime(current_row.index[0], utc=True)
     local_tz = pytz.timezone('US/Central')
