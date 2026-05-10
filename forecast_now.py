@@ -175,11 +175,36 @@ def generate_multi_forecast():
     for key, (label, unit) in history_keys.items():
         history_results['gauges'][key] = build_gauge_history(df, key, label, unit)
 
+    # 🆕 Generate Weather and Saturation Data
+    weather_results = {
+        'timestamp': local_time.strftime('%Y-%m-%d %I:%M %p'),
+        'saturation': {
+            'fayetteville': safe_float(current_row['precip_fayetteville_saturation'].iloc[0]) if 'precip_fayetteville_saturation' in current_row.columns else 0,
+            'recent_24h': safe_float(current_row['precip_fayetteville_24h'].iloc[0]) if 'precip_fayetteville_24h' in current_row.columns else 0
+        },
+        'forecast': []
+    }
+
+    if os.path.exists('weather_forecast.csv'):
+        weather_df = pd.read_csv('weather_forecast.csv')
+        # Get rows where timestamp is >= current time, just take the next 5 records
+        if not weather_df.empty and 'precip_expected_mm' in weather_df.columns:
+            # Drop na and filter to values > 0 to show only actual rain
+            future_rain = weather_df[weather_df['precip_expected_mm'] > 0].head(5)
+            for _, r in future_rain.iterrows():
+                weather_results['forecast'].append({
+                    'timestamp': str(r.get('timestamp', '')),
+                    'precip_mm': safe_float(r['precip_expected_mm'])
+                })
+
     with open('forecasts.json', 'w') as f:
         json.dump(forecast_results, f, indent=4)
 
     with open('history.json', 'w') as f:
         json.dump(history_results, f, indent=4)
+        
+    with open('weather.json', 'w') as f:
+        json.dump(weather_results, f, indent=4)
 
     print("✅ Web Dashboard Updated with Nested Data.")
     print(f"Data status: {df.isnull().sum().sum()} missing values found.")

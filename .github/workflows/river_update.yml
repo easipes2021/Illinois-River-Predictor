@@ -49,7 +49,7 @@ jobs:
           echo "predict_all.py completed"
           python forecast_now.py
           echo "forecast_now.py completed"
-          ls -la forecasts.json history.json
+          ls -la forecasts.json history.json weather.json
         env:
           PYTHONUNBUFFERED: 1
 
@@ -59,6 +59,6 @@ jobs:
         run: |
           git config --global user.name 'Illinois-River-Bot'
           git config --global user.email 'bot@illinoisriver.ai'
-          git add forecasts.json history.json
+          git add forecasts.json history.json weather.json
           git diff --cached --quiet || git commit -m "Automated River Update: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           git push origin HEAD:main

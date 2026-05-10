@@ -45,6 +45,14 @@
             </div>
 
             <aside class="space-y-6">
+                <!-- Weather & Saturation Section -->
+                <section class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
+                    <h2 class="text-xl font-semibold mb-4">Area Weather & Saturation</h2>
+                    <div id="weather-content" class="space-y-4">
+                        <p class="text-sm text-slate-400">Loading weather data...</p>
+                    </div>
+                </section>
+
                 <section class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
                     <h2 class="text-xl font-semibold mb-4">Dashboard Settings</h2>
                     <div class="space-y-4">
@@ -189,6 +197,16 @@
                 console.warn('History fetch error:', err);
             }
 
+            let weatherData = null;
+            try {
+                const weatherResp = await fetch('./weather.json');
+                if (weatherResp.ok) weatherData = await weatherResp.json();
+            } catch (err) {
+                console.warn('Weather fetch error:', err);
+            }
+
+            renderWeather(weatherData);
+
             if (forecastData) {
                 latestForecast = forecastData;
                 clearPageMessage();
@@ -234,6 +252,49 @@
             if (cardsCreated === 0) {
                 container.innerHTML = `<p class="text-slate-400 col-span-full">No forecast cards could be rendered. The pipeline may still be updating.</p>`;
             }
+        }
+
+        function renderWeather(data) {
+            const container = document.getElementById('weather-content');
+            if (!data) {
+                container.innerHTML = '<p class="text-sm text-slate-400">Weather data unavailable.</p>';
+                return;
+            }
+
+            let html = `
+                <div class="mb-4 pb-4 border-b border-slate-700">
+                    <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Ground Saturation</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-slate-300">Fayetteville Index:</span>
+                        <span class="font-mono text-sky-400 font-semibold">${data.saturation.fayetteville.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between items-center mt-1">
+                        <span class="text-sm text-slate-300">Past 24h Rain:</span>
+                        <span class="font-mono text-sky-400 font-semibold">${data.saturation.recent_24h.toFixed(2)} mm</span>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Upcoming Forecast</p>
+                    <div class="space-y-2">
+            `;
+
+            if (data.forecast && data.forecast.length > 0) {
+                data.forecast.forEach(item => {
+                    const dt = new Date(item.timestamp);
+                    const timeStr = dt.toLocaleTimeString([], {weekday: 'short', hour: 'numeric'});
+                    html += `
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-300">${timeStr}</span>
+                            <span class="font-mono text-sky-400">${item.precip_mm.toFixed(2)} mm</span>
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<p class="text-sm text-slate-400 italic">No significant rain expected soon.</p>';
+            }
+
+            html += `</div></div>`;
+            container.innerHTML = html;
         }
 
         function createCard(parent, title, vals, unit, accentColor = '#3b82f6') {
