@@ -67,13 +67,32 @@ def generate_multi_forecast():
         'savoy_height_6h_ago',
         'osage_creek_flow_3h_ago',
         'osage_creek_flow_6h_ago',
+        # 🆕 PHASE 1: Extended lags
+        'savoy_height_12h_ago',
+        'savoy_height_24h_ago',
+        'osage_creek_flow_12h_ago',
+        'osage_creek_flow_24h_ago',
+        # 🆕 PHASE 1: Trend indicators
+        'savoy_height_trend_6h',
+        'savoy_height_trend_24h',
+        'osage_creek_flow_trend_6h',
+        'osage_creek_flow_trend_24h',
+        # Rainfall
         'precip_fayetteville',
         'precip_springdale',
         'precip_bentonville',
         'precip_siloam',
         'precip_fayetteville_saturation',
+        # 🆕 PHASE 1: Multiple precip windows
+        'precip_fayetteville_24h',
+        'precip_fayetteville_48h',
+        'precip_fayetteville_168h',
+        # Seasonal & storage
         'seasonal_cycle',
-        'lake_headroom'
+        'lake_headroom',
+        # 🆕 PHASE 1: Hour-of-day features
+        'hour_sin',
+        'hour_cos'
     ]
 
     locations = {

@@ -37,22 +37,45 @@ def train_multi_models():
         'osage_creek_flow', 
         'hwy_59_height',
         
-        # --- Lagged Features (The "Wave Detector") ---
+        # --- Original Lagged Features (The "Wave Detector") ---
         'savoy_height_3h_ago', 
         'savoy_height_6h_ago', 
         'osage_creek_flow_3h_ago', 
         'osage_creek_flow_6h_ago',
         
-        # --- Rainfall Data ---
+        # --- 🆕 PHASE 1: Extended Lag Features ---
+        'savoy_height_12h_ago',
+        'savoy_height_24h_ago',
+        'osage_creek_flow_12h_ago',
+        'osage_creek_flow_24h_ago',
+        
+        # --- 🆕 PHASE 1: Trend Indicators ---
+        'savoy_height_trend_6h',
+        'savoy_height_trend_24h',
+        'osage_creek_flow_trend_6h',
+        'osage_creek_flow_trend_24h',
+        
+        # --- Rainfall Data (Original) ---
         'precip_fayetteville', 
         'precip_springdale', 
         'precip_bentonville', 
         'precip_siloam',
         
+        # --- Original Saturation (72-hour) ---
+        'precip_fayetteville_saturation',
+        
+        # --- 🆕 PHASE 1: Multiple Precipitation Windows ---
+        'precip_fayetteville_24h',
+        'precip_fayetteville_48h',
+        'precip_fayetteville_168h',
+        
         # --- Soil & Seasonal Logic ---
-        'precip_fayetteville_saturation', 
         'seasonal_cycle',
-        'lake_headroom'
+        'lake_headroom',
+        
+        # --- 🆕 PHASE 1: Hour-of-Day Features ---
+        'hour_sin',
+        'hour_cos'
     ]
 
     # 5. Train and Save

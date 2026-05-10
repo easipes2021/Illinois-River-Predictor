@@ -1,5 +1,6 @@
 import dataretrieval.nwis as nwis
 import pandas as pd
+import socket
 
 STATIONS = {
     'savoy': '07194800',
@@ -9,6 +10,9 @@ STATIONS = {
     'lake_francis': '07195495',
     'watts_ok': '07195500'
 }
+
+# 🆕 Set socket timeout to prevent indefinite hangs
+socket.setdefaulttimeout(10)
 
 def fetch_river_network(days=7):
     all_data = []
@@ -20,7 +24,7 @@ def fetch_river_network(days=7):
             df, _ = nwis.get_iv(sites=site_id, period=f'P{days}D')
             
             if df.empty:
-                print(f"  ! No data found for {name} in the last {days} days.")
+                print(f"  ⚠️ No data found for {name} in the last {days} days.")
                 continue
 
             # Standard USGS Codes: 00060 (Discharge), 00065 (Gage Height)
@@ -34,22 +38,26 @@ def fetch_river_network(days=7):
             # Keep only our renamed columns
             keep_cols = [c for c in df.columns if c in rename_dict.values()]
             all_data.append(df[keep_cols])
-            print(f"  ✓ Success: Found {list(rename_dict.values())}")
+            print(f"  ✅ Success: Found {list(rename_dict.values())} ({len(df)} records)")
 
+        except socket.timeout:
+            print(f"  ❌ Timeout: Request took too long for {name}")
         except Exception as e:
-            print(f"  × Error fetching {name}: {e}")
+            print(f"  ❌ Error fetching {name}: {type(e).__name__}: {e}")
 
     if not all_data:
+        print("❌ No data was collected from any stations!")
         return pd.DataFrame()
 
     # Join everything together by time
     final_df = pd.concat(all_data, axis=1)
+    print(f"✅ Combined data: {len(final_df)} rows, {len(final_df.columns)} columns")
     return final_df
 
 if __name__ == "__main__":
     river_data = fetch_river_network(days=5)
     if not river_data.empty:
         river_data.to_csv('illinois_river_network.csv')
-        print("\nSUCCESS: Data saved to illinois_river_network.csv")
+        print(f"✅ Data saved to illinois_river_network.csv ({len(river_data)} records)")
     else:
-        print("\nFAILURE: No data was collected.")
+        print("❌ FAILURE: No data was collected.")

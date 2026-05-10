@@ -64,14 +64,29 @@ def merge_datasets():
     master_df['day_of_year'] = master_df.index.dayofyear
     master_df['seasonal_cycle'] = np.sin(2 * np.pi * master_df['day_of_year'] / 365)
 
+    # 🆕 PHASE 1: Hour-of-day feature (sin/cos cyclic encoding)
+    master_df['hour_of_day'] = master_df.index.hour
+    master_df['hour_sin'] = np.sin(2 * np.pi * master_df['hour_of_day'] / 24)
+    master_df['hour_cos'] = np.cos(2 * np.pi * master_df['hour_of_day'] / 24)
+
     for col in precip_cols:
         master_df[f'{col}_saturation'] = master_df[col].rolling(window=72, min_periods=1).sum()
+        # 🆕 PHASE 1: Multiple precipitation windows (24h, 48h, 168h)
+        master_df[f'{col}_24h'] = master_df[col].rolling(window=24, min_periods=1).sum()
+        master_df[f'{col}_48h'] = master_df[col].rolling(window=48, min_periods=1).sum()
+        master_df[f'{col}_168h'] = master_df[col].rolling(window=168, min_periods=1).sum()
 
     upstream_cols = ['savoy_height', 'osage_creek_flow']
     for col in upstream_cols:
         if col in master_df.columns:
             master_df[f'{col}_3h_ago'] = master_df[col].shift(3)
             master_df[f'{col}_6h_ago'] = master_df[col].shift(6)
+            # 🆕 PHASE 1: Extended lag features (12h, 24h)
+            master_df[f'{col}_12h_ago'] = master_df[col].shift(12)
+            master_df[f'{col}_24h_ago'] = master_df[col].shift(24)
+            # 🆕 PHASE 1: Trend indicators
+            master_df[f'{col}_trend_6h'] = master_df[col].diff(6).fillna(0)
+            master_df[f'{col}_trend_24h'] = master_df[col].diff(24).fillna(0)
 
     if 'savoy_height' in master_df.columns:
         master_df['savoy_trend'] = master_df['savoy_height'].diff().fillna(0)
