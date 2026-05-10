@@ -14,20 +14,25 @@ def train_multi_models():
     # 1. FILL GAPS: Ensures missing sensor readings don't delete entire rows
     df = df.ffill().bfill()
 
-    # 2. Define 4 Targets (6 hours into the future)
-    targets = {
-        'hwy_16_flow': 'target_hwy16_6h',
-        'hwy_59_flow_est': 'target_hwy59_6h', 
-        'lake_francis_height': 'target_lake_6h',
-        'watts_ok_flow': 'target_watts_6h'
-    }
+    # 2. Define prediction targets and horizons
+    base_targets = [
+        'hwy_16_flow',
+        'hwy_59_flow_est', 
+        'lake_francis_height',
+        'watts_ok_flow'
+    ]
+    horizons = [6, 12, 24]
 
-    # 3. Create the future "truth" columns (Shift -6 hours)
-    for col, target_name in targets.items():
+    # 3. Create the future "truth" columns
+    targets = {}
+    for col in base_targets:
         if col in df.columns:
-            df[target_name] = df[col].shift(-6)
+            for h in horizons:
+                target_name = f'target_{col}_{h}h'
+                targets[f'{col}_{h}h'] = target_name
+                df[target_name] = df[col].shift(-h)
         else:
-            print(f"⚠️ Warning: {col} not found in CSV. Skipping target.")
+            print(f"⚠️ Warning: {col} not found in CSV. Skipping targets.")
 
     # 4. Features: The AI's "Eyes"
     # MUST match exactly what merge_data.py outputs

@@ -143,27 +143,26 @@ def generate_multi_forecast():
         if current_val is not None:
             last_known_values[key] = current_val
 
-        model_path = f'model_{key}.pkl'
-        if not os.path.exists(model_path):
-            print(f"   [!] Model for {label} (.pkl) not found.")
-            forecast_results[key] = {'current': current_val, 'projected': None}
-            continue
+        forecast_results[key] = {'current': None if current_val is None else round(current_val, 2)}
+        
+        for h in [6, 12, 24]:
+            model_path = f'model_{key}_{h}h.pkl'
+            if not os.path.exists(model_path):
+                print(f"   [!] Model for {label} ({h}h) not found.")
+                forecast_results[key][f'projected_{h}h'] = None
+                continue
 
-        try:
-            model = joblib.load(model_path)
-            print(f"DEBUG: Model input for {key}: {feature_row.values}")
-            input_df = pd.DataFrame([feature_row.values], columns=features)
-            pred = model.predict(input_df)[0]
+            try:
+                model = joblib.load(model_path)
+                input_df = pd.DataFrame([feature_row.values], columns=features)
+                pred = model.predict(input_df)[0]
 
-            forecast_results[key] = {
-                'current': None if current_val is None else round(current_val, 2),
-                'projected': round(float(pred), 2)
-            }
-            print(f"✅ {label}: {current_val if current_val is not None else 'N/A'} -> {pred:.2f} {unit}")
+                forecast_results[key][f'projected_{h}h'] = round(float(pred), 2)
+                print(f"✅ {label} ({h}h): {current_val if current_val is not None else 'N/A'} -> {pred:.2f} {unit}")
 
-        except Exception as e:
-            print(f"   [!] Error predicting {label}: {e}")
-            forecast_results[key] = {'current': current_val, 'projected': None}
+            except Exception as e:
+                print(f"   [!] Error predicting {label} {h}h: {e}")
+                forecast_results[key][f'projected_{h}h'] = None
 
     history_keys = {
         'hwy_16_flow': ('Hwy 16 (Siloam)', 'CFS'),
