@@ -4,9 +4,21 @@ import json
 import os
 
 
+def apply_hwy59_interpolation(H, paired_data):
+    """
+    Uses historical paired data for Hwy 59 to interpolate flow from height.
+    This is much more accurate than a simple piecewise power law.
+    """
+    if pd.isna(H) or H <= 0:
+        return 0.0
+    
+    # Linear interpolation using historical height/flow pairs
+    return np.interp(H, paired_data['value_H'], paired_data['value_Q'])
+
+
 def apply_sskp_rating(H, meta):
     """
-    Implements the piecewise rating relationship used for Hwy 59.
+    Implements the piecewise rating relationship used for Hwy 59. (Fallback)
     """
     if pd.isna(H) or H <= 0:
         return 0.0
@@ -37,6 +49,15 @@ def merge_datasets():
 
     river_df = pd.read_csv('illinois_river_network.csv', index_col=0, parse_dates=True)
     weather_df = pd.read_csv('weather_forecast.csv', index_col=0, parse_dates=True)
+
+    # Load historical paired data for Hwy 59 flow estimation
+    paired_path = 'paired_stage_flow.csv'
+    paired_data = None
+    if os.path.exists(paired_path):
+        pdf = pd.read_csv(paired_path)
+        # Average Q for each unique H and sort for interpolation
+        paired_data = pdf.groupby('value_H')['value_Q'].mean().reset_index().sort_values('value_H')
+        print(f"✅ Loaded {len(paired_data)} historical rating points for Hwy 59.")
 
     precip_file = 'regional_precip_actual.csv'
     if os.path.exists(precip_file):
@@ -108,7 +129,10 @@ def merge_datasets():
         }
 
     if 'hwy_59_height' in master_df.columns:
-        master_df['hwy_59_flow_est'] = master_df['hwy_59_height'].apply(lambda x: apply_sskp_rating(x, meta))
+        if paired_data is not None:
+            master_df['hwy_59_flow_est'] = master_df['hwy_59_height'].apply(lambda x: apply_hwy59_interpolation(x, paired_data))
+        else:
+            master_df['hwy_59_flow_est'] = master_df['hwy_59_height'].apply(lambda x: apply_sskp_rating(x, meta))
 
     master_df = master_df.dropna(subset=['hwy_59_height', 'watts_ok_height'], how='all')
     master_df.to_csv('master_training_data.csv')
