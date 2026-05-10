@@ -16,32 +16,37 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.12'
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy requests scipy scikit-learn dataretrieval
+          pip install -r requirements.txt
 
       - name: Run Pipeline
         run: |
-          python3 fetch_all_gauges.py
-          python3 fetch_nwa_precip.py
-          python3 fetch_weather.py
-          python3 merge_data.py
-          python3 predict_all.py
-          python3 forecast_now.py
+          python fetch_all_gauges.py
+          python fetch_nwa_precip.py
+          python fetch_weather.py
+          python merge_data.py
+          python predict_all.py
+          python forecast_now.py
         env:
           PYTHONUNBUFFERED: 1
 
-      - name: Commit and Push Results
+      - name: Commit and Push Forecast
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name 'Illinois-River-Bot'
           git config --global user.email 'bot@illinoisriver.ai'
-          git add .
-          git commit -m "Automated River Update: $(date)" || echo "No changes to commit"
-          git push
+          git add forecasts.json
+          git diff --cached --quiet || git commit -m "Automated River Update: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          git push origin HEAD:main
