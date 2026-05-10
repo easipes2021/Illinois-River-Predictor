@@ -1,4 +1,4 @@
-# Illinois River Predictor
+# Illinois River Predictor switch
 
 An AI-powered flow prediction system for the Illinois River that uses machine learning to forecast water levels and discharge rates 6 hours into the future. The system ingests real-time USGS gauge data, weather forecasts, and regional precipitation data to make accurate predictions at multiple monitoring stations.
 
