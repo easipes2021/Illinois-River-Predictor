@@ -32,12 +32,21 @@ jobs:
 
       - name: Run Pipeline
         run: |
+          echo "Starting pipeline..."
           python fetch_all_gauges.py
+          echo "fetch_all_gauges.py completed"
           python fetch_nwa_precip.py
+          echo "fetch_nwa_precip.py completed"
           python fetch_weather.py
+          echo "fetch_weather.py completed"
           python merge_data.py
+          echo "merge_data.py completed"
+          ls -la *.csv
           python predict_all.py
+          echo "predict_all.py completed"
           python forecast_now.py
+          echo "forecast_now.py completed"
+          ls -la forecasts.json history.json
         env:
           PYTHONUNBUFFERED: 1
 
