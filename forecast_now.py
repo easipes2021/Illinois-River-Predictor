@@ -1,6 +1,7 @@
 import pandas as pd
 import joblib
 import os
+import xgboost as xgb
 from datetime import timedelta
 import pytz
 import json
@@ -105,16 +106,33 @@ def generate_multi_forecast():
         'watts_ok_flow': ('Watts Bridge (OK)', 'CFS')
     }
 
+    # 🆕 Use ISO format for robust front-end parsing
+    timestamp_iso = utc_time.isoformat()
+    
     forecast_results = {
-        'timestamp': local_time.strftime('%Y-%m-%d %I:%M %p'),
-        'forecast_time': (local_time + timedelta(hours=6)).strftime('%Y-%m-%d %I:%M %p')
+        'timestamp': timestamp_iso,
+        'forecast_time_6h': (utc_time + timedelta(hours=6)).isoformat(),
+        'forecast_time_12h': (utc_time + timedelta(hours=12)).isoformat(),
+        'forecast_time_24h': (utc_time + timedelta(hours=24)).isoformat(),
+    }
+    
+    history_results = {
+        'timestamp': timestamp_iso,
+        'gauges': {},
+        'comparison': {} # 🆕 For historical overlay
     }
 
-    history_results = {
-        'timestamp': local_time.strftime('%Y-%m-%d %I:%M %p'),
-        'forecast_time': (local_time + timedelta(hours=6)).strftime('%Y-%m-%d %I:%M %p'),
-        'gauges': {}
-    }
+    # 🆕 Generate Historical Comparison (Last Week)
+    last_week_ts = utc_time - timedelta(days=7)
+    # Convert to naive for comparison with index
+    last_week_naive = last_week_ts.replace(tzinfo=None)
+    
+    # Get 24 hours of data starting from 7 days ago
+    comp_range = df[df.index >= last_week_naive].head(24)
+    if not comp_range.empty:
+        for key in ['hwy_16_flow', 'hwy_59_flow_est', 'watts_ok_flow']:
+            if key in comp_range.columns:
+                history_results['comparison'][key] = comp_range[key].tolist()
 
     last_known_values = {}
     limits = {
@@ -199,6 +217,19 @@ def generate_multi_forecast():
                     'precip_mm': safe_float(r['precip_expected_mm'])
                 })
 
+    # 🆕 Generate Event-Mode Simulations
+    try:
+        from simulate_event import simulate_rain
+        sim_results = {
+            "1in": simulate_rain(1.0),
+            "2in": simulate_rain(2.0)
+        }
+        with open('simulations.json', 'w') as f:
+            json.dump(sim_results, f, indent=4)
+        print("✅ Rain Simulations Generated (1\" and 2\").")
+    except Exception as e:
+        print(f"⚠️ Simulation generation failed: {e}")
+
     with open('forecasts.json', 'w') as f:
         json.dump(forecast_results, f, indent=4)
 
@@ -208,7 +239,7 @@ def generate_multi_forecast():
     with open('weather.json', 'w') as f:
         json.dump(weather_results, f, indent=4)
 
-    print("✅ Web Dashboard Updated with Nested Data.")
+    print("✅ Dashboard Data Packaged (including Historical Comparison).")
     print(f"Data status: {df.isnull().sum().sum()} missing values found.")
 
 

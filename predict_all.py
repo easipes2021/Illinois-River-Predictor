@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
+import xgboost as xgb
 import joblib
 import os
 
@@ -98,20 +98,27 @@ def train_multi_models():
             X = df_clean[features]
             y = df_clean[target_name]
             
-            # Training the model
-            # 150 trees helps the AI better understand these complex lag patterns
-            model = RandomForestRegressor(n_estimators=150, min_samples_leaf=1, max_features='sqrt', random_state=42)
+            # Transitioned to XGBoost for better handling of non-linear trends and lags
+            # n_estimators=500 with learning_rate=0.05 provides better convergence than RF
+            model = xgb.XGBRegressor(
+                n_estimators=500,
+                learning_rate=0.05,
+                max_depth=5,
+                random_state=42,
+                objective='reg:squarederror'
+            )
             model.fit(X, y)
             
             # Save the model
             joblib.dump(model, f'model_{col}.pkl')
-            print(f"✅ Model saved: model_{col}.pkl")
+            print(f"✅ XGBoost Model saved: model_{col}.pkl")
+
+            # Add this right after model.fit(X, y)
+            importances = pd.Series(model.feature_importances_, index=features)
+            print(f"Top 3 Drivers for {col}:")
+            print(importances.sort_values(ascending=False).head(3))
 
     print("🚀 Success: All AI models updated with lagged trend features.")
-    # Add this right after model.fit(X, y)
-    importances = pd.Series(model.feature_importances_, index=features)
-    print(f"Top 3 Drivers for {col}:")
-    print(importances.sort_values(ascending=False).head(3))
 
 if __name__ == "__main__":
     train_multi_models()

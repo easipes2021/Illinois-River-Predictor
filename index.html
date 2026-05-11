@@ -77,6 +77,27 @@
                                 <option value="hwy_59_flow_est">Hwy 59 (AR Bridge)</option>
                             </select>
                         </div>
+                        <div class="pt-2">
+                            <button id="toggle-comparison" onclick="toggleComparison()" class="w-full rounded-2xl bg-slate-900 border border-slate-700 p-3 text-slate-400 text-sm font-medium transition-all hover:bg-slate-800">
+                                Show Last Week Overlay
+                            </button>
+                        </div>
+                    </div>
+                </section>
+                
+                <section class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <span class="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg text-xs">Sim</span>
+                        Event Simulator
+                    </h2>
+                    <p class="text-slate-400 text-xs mb-4">Simulate how the river would react to hypothetical additional rainfall over the basin.</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setSimulation('none')" id="btn-sim-none" class="rounded-xl p-2 border border-slate-700 text-xs transition-all hover:bg-slate-700 font-medium bg-slate-700 text-white">Actual</button>
+                        <button onclick="setSimulation('1in')" id="btn-sim-1in" class="rounded-xl p-2 border border-slate-700 text-xs transition-all hover:bg-slate-700 font-medium text-slate-400">Add 1"</button>
+                        <button onclick="setSimulation('2in')" id="btn-sim-2in" class="rounded-xl p-2 border border-slate-700 text-xs transition-all hover:bg-slate-700 font-medium text-slate-400">Add 2"</button>
+                    </div>
+                    <div id="sim-warning" class="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl hidden">
+                        <p class="text-orange-300 text-[10px] leading-relaxed italic">Note: Simulations are AI-generated based on current soil saturation and upstream conditions.</p>
                     </div>
                 </section>
 
@@ -124,13 +145,16 @@
         const DEFAULT_SETTINGS = {
             wokaRatio: 0.82,
             chartMode: 'compare',
-            horizon: 6
+            horizon: 6,
+            showComparison: false
         };
 
         let settings = { ...DEFAULT_SETTINGS };
         let chartInstance = null;
         let latestForecast = null;
         let latestHistory = null;
+        let latestSimulations = null;
+        let activeSimulation = 'none';
 
         function saveSettings() {
             localStorage.setItem('riverDashboardSettings', JSON.stringify(settings));
@@ -163,8 +187,44 @@
                         : "flex-1 rounded-md py-1 text-sm font-medium transition-colors text-slate-400 hover:text-white";
                 }
             });
+
+            const compToggle = document.getElementById('toggle-comparison');
+            if (compToggle) {
+                compToggle.className = settings.showComparison
+                    ? "w-full rounded-2xl bg-sky-900/40 border border-sky-500/50 p-3 text-sky-200 text-sm font-medium transition-all"
+                    : "w-full rounded-2xl bg-slate-900 border border-slate-700 p-3 text-slate-400 text-sm font-medium transition-all hover:bg-slate-800";
+                compToggle.innerText = settings.showComparison ? "Showing Last Week Overlay" : "Show Last Week Overlay";
+            }
             
             document.getElementById('forecast-horizon').innerText = `Forecast horizon: ${settings.horizon}h projection`;
+        }
+
+        function toggleComparison() {
+            settings.showComparison = !settings.showComparison;
+            saveSettings();
+            updateSettingsUI();
+            renderHistoryChart(latestHistory, latestForecast);
+        }
+
+        function setSimulation(mode) {
+            activeSimulation = mode;
+            ['none', '1in', '2in'].forEach(m => {
+                const btn = document.getElementById(`btn-sim-${m}`);
+                if (btn) {
+                    btn.className = activeSimulation === m 
+                        ? "rounded-xl p-2 border border-slate-700 text-xs transition-all font-medium bg-orange-600 text-white" 
+                        : "rounded-xl p-2 border border-slate-700 text-xs transition-all hover:bg-slate-700 font-medium text-slate-400";
+                }
+            });
+            
+            const warning = document.getElementById('sim-warning');
+            if (warning) {
+                if (activeSimulation !== 'none') warning.classList.remove('hidden');
+                else warning.classList.add('hidden');
+            }
+
+            renderForecastCards(latestForecast);
+            renderHistoryChart(latestHistory, latestForecast);
         }
 
         function setHorizon(val) {
@@ -232,38 +292,58 @@
                 console.warn('Weather fetch error:', err);
             }
 
+            try {
+                const simResp = await fetch('./simulations.json');
+                if (simResp.ok) latestSimulations = await simResp.json();
+            } catch (err) {
+                console.warn('Simulations fetch error:', err);
+            }
+
             renderWeather(weatherData);
 
             if (forecastData) {
                 latestForecast = forecastData;
                 clearPageMessage();
                 renderForecastCards(forecastData);
-                document.getElementById('update-time').innerText = forecastData.timestamp || 'Just Now';
+                const dt = new Date(forecastData.timestamp);
+                document.getElementById('update-time').innerText = dt.toLocaleTimeString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             }
 
             if (historyData) {
                 latestHistory = historyData;
-                renderHistoryChart(historyData);
+                renderHistoryChart(historyData, latestForecast);
             } else {
-                renderHistoryChart(null);
+                renderHistoryChart(null, null);
             }
         }
 
         function renderForecastCards(data) {
             const container = document.getElementById('dashboard');
             container.innerHTML = '';
+            let displayData = data;
+            if (activeSimulation !== 'none' && latestSimulations && latestSimulations[activeSimulation]) {
+                displayData = JSON.parse(JSON.stringify(data));
+                const sim = latestSimulations[activeSimulation];
+                for (const gauge in sim) {
+                    if (displayData[gauge]) {
+                        displayData[gauge].projected_6h = sim[gauge].projected_6h;
+                        displayData[gauge].projected_12h = sim[gauge].projected_12h;
+                        displayData[gauge].projected_24h = sim[gauge].projected_24h;
+                    }
+                }
+            }
 
-            if (!data) {
+            if (!displayData) {
                 container.innerHTML = `<p class="text-slate-400 col-span-full">Forecast data is unavailable.</p>`;
                 return;
             }
 
             let cardsCreated = 0;
             for (const [key, meta] of Object.entries(GAUGE_MAP)) {
-                if (data[key]) {
+                if (displayData[key]) {
                     const vals = {
-                        current: data[key].current,
-                        projected: data[key][`projected_${settings.horizon}h`]
+                        current: displayData[key].current,
+                        projected: displayData[key][`projected_${settings.horizon}h`]
                     };
                     createCard(container, meta.name, vals, meta.unit, meta.color);
                     cardsCreated += 1;
@@ -358,7 +438,7 @@
             parent.appendChild(card);
         }
 
-        function renderHistoryChart(data) {
+        function renderHistoryChart(data, forecastData) {
             const updateNode = document.getElementById('history-update');
             const canvas = document.getElementById('historyChart');
             const message = document.getElementById('history-message');
@@ -378,18 +458,82 @@
             availableKeys.forEach(key => {
                 const gauge = data.gauges[key];
                 if (!gauge) return;
-                const points = gauge.history.map(point => ({ x: new Date(point.timestamp), y: point.value }));
-                if (!points.length) return;
+                
+                const historyPoints = gauge.history.map(point => ({ x: new Date(point.timestamp), y: point.value }));
+                if (!historyPoints.length) return;
+
                 if (mode === 'compare' || mode === key) {
+                    // 1. History Dataset
                     datasets.push({
                         label: gauge.name,
-                        data: points,
+                        data: historyPoints,
                         borderColor: GAUGE_MAP[key]?.color || '#60a5fa',
                         backgroundColor: 'transparent',
                         tension: 0.3,
-                        pointRadius: 2,
-                        borderWidth: 2
+                        pointRadius: 0,
+                        borderWidth: 3
                     });
+
+                    // 2. Forecast Dataset (Extension)
+                    if (forecastData && forecastData[key]) {
+                        const baseTime = new Date(forecastData.timestamp);
+                        
+                        // Use simulation values if active
+                        let p6 = forecastData[key].projected_6h;
+                        let p12 = forecastData[key].projected_12h;
+                        let p24 = forecastData[key].projected_24h;
+                        
+                        if (activeSimulation !== 'none' && latestSimulations && latestSimulations[activeSimulation]) {
+                            const sim = latestSimulations[activeSimulation];
+                            if (sim[key]) {
+                                p6 = sim[key].projected_6h;
+                                p12 = sim[key].projected_12h;
+                                p24 = sim[key].projected_24h;
+                            }
+                        }
+
+                        const forecastPoints = [
+                            { x: historyPoints[historyPoints.length - 1].x, y: historyPoints[historyPoints.length - 1].y },
+                            { x: new Date(baseTime.getTime() + 6 * 3600000), y: p6 },
+                            { x: new Date(baseTime.getTime() + 12 * 3600000), y: p12 },
+                            { x: new Date(baseTime.getTime() + 24 * 3600000), y: p24 }
+                        ].filter(p => p.y != null);
+
+                        datasets.push({
+                            label: `${gauge.name} (FCST)`,
+                            data: forecastPoints,
+                            borderColor: GAUGE_MAP[key]?.color || '#60a5fa',
+                            backgroundColor: 'transparent',
+                            borderDash: [6, 4],
+                            tension: 0.1,
+                            pointRadius: 4,
+                            pointBackgroundColor: GAUGE_MAP[key]?.color || '#60a5fa',
+                            borderWidth: 2
+                        });
+                    }
+
+                    // 3. Comparison Dataset (Last Week Overlay)
+                    if (settings.showComparison && data.comparison && data.comparison[key]) {
+                        const compValues = data.comparison[key];
+                        // Align the last week's data to the current time axis for comparison
+                        const compPoints = historyPoints.map((p, i) => ({
+                            x: p.x,
+                            y: compValues[i] !== undefined ? compValues[i] : null
+                        })).filter(p => p.y !== null);
+
+                        datasets.push({
+                            label: `${gauge.name} (Last Week)`,
+                            data: compPoints,
+                            borderColor: GAUGE_MAP[key]?.color || '#60a5fa',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            tension: 0.3,
+                            fill: false,
+                            opacity: 0.3,
+                            borderDash: [2, 2]
+                        });
+                    }
                 }
             });
 
@@ -397,7 +541,7 @@
                 canvas.style.display = 'none';
                 message.innerText = 'No historical gauge values found for the selected chart view.';
                 message.style.display = 'flex';
-                updateNode.innerText = data.timestamp || '';
+                updateNode.innerText = '';
                 return;
             }
 

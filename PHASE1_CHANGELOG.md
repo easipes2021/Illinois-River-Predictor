@@ -114,11 +114,13 @@ forecasts.json
 
 ## Next Steps
 
-**Phase 2 (Week 3-4):** Hyperparameter Tuning & Ensemble Methods
-- GridSearchCV for optimal tree count, max_depth
-- XGBoost ensemble learning
+**Phase 2 (COMPLETED early):** Transition to XGBoost & Optimization
+- Replaced `RandomForestRegressor` with `XGBRegressor` for all 12 forecast models.
+- Set hyperparameters: `n_estimators=500`, `learning_rate=0.05`, `max_depth=5`.
+- Dependency added: `xgboost`, `libomp` (for Mac).
+- Result: Improved handling of non-linear momentum and better convergence on 24h horizons.
 
-**Phase 3 (Week 5-6):** Enhanced Data Sources
+**Phase 3 (Next):** Enhanced Data Sources
 - Temperature data (min/max/dewpoint)
 - Humidity/vapor pressure
 - Barometric pressure
