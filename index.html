@@ -41,6 +41,59 @@
         <div id="page-message" class="hidden mb-6 rounded-xl p-4 bg-slate-800 text-slate-200 text-sm"></div>
 
         <div class="grid gap-6 xl:grid-cols-[2fr_1fr]">
+            <div class="space-y-6">
+                <!-- Live Gauges Section -->
+                <section>
+                    <div class="flex items-center justify-between gap-4 mb-5">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Live River Conditions</p>
+                            <h2 class="text-2xl font-semibold">Gauge Status & Forecast</h2>
+                        </div>
+                        <span class="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.3em] text-slate-400 border border-slate-700">Actual Readings</span>
+                    </div>
+                    <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Live cards will be injected here -->
+                    </div>
+                </section>
+
+                <!-- Hypothetical Simulator Section -->
+                <section class="bg-slate-800/40 p-8 rounded-[2rem] border border-orange-500/20 shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10">
+                        <svg class="w-24 h-24 text-orange-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                    </div>
+                    
+                    <div class="mb-8">
+                        <p class="text-xs uppercase tracking-[0.3em] text-orange-400 font-bold mb-2">Advanced Simulation Mode</p>
+                        <h2 class="text-3xl font-bold text-white">Hypothetical Rain Event</h2>
+                        <p class="text-slate-400 mt-2 max-w-xl">Project how current water levels would surge if an additional storm system dropped significant rainfall over the basin in the next 24 hours.</p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-6 rounded-3xl border border-slate-700/50 mb-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <label class="text-lg font-medium text-slate-200">Hypothetical Rainfall Amount</label>
+                            <span id="sim-rain-display" class="text-3xl font-bold text-orange-500">0.00"</span>
+                        </div>
+                        <input id="sim-rain-slider" type="range" min="0" max="3" step="0.5" value="0" class="w-full h-3 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500">
+                        <div class="flex justify-between mt-3 text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+                            <span>0" (Current)</span>
+                            <span>0.5"</span>
+                            <span>1.0"</span>
+                            <span>1.5"</span>
+                            <span>2.0"</span>
+                            <span>2.5"</span>
+                            <span>3.0"</span>
+                        </div>
+                    </div>
+
+                    <div id="sim-dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-50 transition-opacity duration-500">
+                        <!-- Simulated cards will be injected here -->
+                    </div>
+
+                    <div id="sim-placeholder" class="py-12 text-center border-2 border-dashed border-slate-700 rounded-3xl">
+                        <p class="text-slate-500">Move the slider above to see simulated impact</p>
+                    </div>
+                </section>
+            </div>
 
             <aside class="space-y-6">
                 <!-- Weather & Saturation Section -->
@@ -94,28 +147,6 @@
                     </div>
                 </section>
 
-                <section class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
-                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <span class="p-1.5 bg-orange-500/20 text-orange-400 rounded-lg text-xs">Sim</span>
-                        Event Simulator
-                    </h2>
-                    <p class="text-slate-400 text-xs mb-4">Simulate how the river would react to hypothetical additional
-                        rainfall over the basin.</p>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setSimulation('none')" id="btn-sim-none"
-                            class="rounded-xl p-2 border border-slate-700 text-xs transition-all hover:bg-slate-700 font-medium bg-slate-700 text-white">Actual</button>
-                        <button onclick="setSimulation('1in')" id="btn-sim-1in"
-                            class="rounded-xl p-2 border border-slate-700 text-xs transition-all hover:bg-slate-700 font-medium text-slate-400">Add
-                            1"</button>
-                        <button onclick="setSimulation('2in')" id="btn-sim-2in"
-                            class="rounded-xl p-2 border border-slate-700 text-xs transition-all hover:bg-slate-700 font-medium text-slate-400">Add
-                            2"</button>
-                    </div>
-                    <div id="sim-warning"
-                        class="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl hidden">
-                        <p class="text-orange-300 text-[10px] leading-relaxed italic">Note: Simulations are AI-generated
-                            based on current soil saturation and upstream conditions.</p>
-                    </div>
                 </section>
 
                 <section class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
@@ -227,6 +258,45 @@
             renderHistoryChart(latestHistory, latestForecast);
         }
 
+        function updateSimulation() {
+            const amount = parseFloat(document.getElementById('sim-rain-slider').value);
+            const display = document.getElementById('sim-rain-display');
+            const simDashboard = document.getElementById('sim-dashboard');
+            const placeholder = document.getElementById('sim-placeholder');
+            
+            display.innerText = amount.toFixed(2) + '"';
+            
+            if (amount === 0) {
+                simDashboard.style.opacity = '0.5';
+                placeholder.classList.remove('hidden');
+                simDashboard.innerHTML = '';
+                return;
+            }
+
+            placeholder.classList.add('hidden');
+            simDashboard.style.opacity = '1';
+            
+            const simKey = `${amount.toFixed(1)}in`;
+            const simData = latestSimulations ? latestSimulations[simKey] : null;
+            
+            if (!simData) {
+                simDashboard.innerHTML = `<p class="text-slate-500 col-span-full py-8 text-center italic">Simulation data for ${amount}" not yet calculated.</p>`;
+                return;
+            }
+
+            // Create a pseudo-forecast object for rendering
+            const simulatedForecast = JSON.parse(JSON.stringify(latestForecast));
+            for (const gauge in simData) {
+                if (simulatedForecast[gauge]) {
+                    simulatedForecast[gauge].projected_6h = simData[gauge].projected_6h;
+                    simulatedForecast[gauge].projected_12h = simData[gauge].projected_12h;
+                    simulatedForecast[gauge].projected_24h = simData[gauge].projected_24h;
+                }
+            }
+
+            renderForecastCards(simulatedForecast, 'sim-dashboard');
+        }
+
         function setSimulation(mode) {
             activeSimulation = mode;
             ['none', '1in', '2in'].forEach(m => {
@@ -325,7 +395,8 @@
             if (forecastData) {
                 latestForecast = forecastData;
                 clearPageMessage();
-                renderForecastCards(forecastData);
+                renderForecastCards(forecastData, 'dashboard');
+                updateSimulation(); // Update simulation if slider is set
                 const dt = new Date(forecastData.timestamp);
                 document.getElementById('update-time').innerText = dt.toLocaleTimeString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             }
@@ -338,26 +409,17 @@
             }
         }
 
-        function renderForecastCards(data) {
-            const container = document.getElementById('dashboard');
+        function renderForecastCards(data, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
             container.innerHTML = '';
-            let displayData = data;
-            if (activeSimulation !== 'none' && latestSimulations && latestSimulations[activeSimulation]) {
-                displayData = JSON.parse(JSON.stringify(data));
-                const sim = latestSimulations[activeSimulation];
-                for (const gauge in sim) {
-                    if (displayData[gauge]) {
-                        displayData[gauge].projected_6h = sim[gauge].projected_6h;
-                        displayData[gauge].projected_12h = sim[gauge].projected_12h;
-                        displayData[gauge].projected_24h = sim[gauge].projected_24h;
-                    }
-                }
-            }
-
-            if (!displayData) {
+            
+            if (!data) {
                 container.innerHTML = `<p class="text-slate-400 col-span-full">Forecast data is unavailable.</p>`;
                 return;
             }
+
+            let displayData = data;
 
             let cardsCreated = 0;
             for (const [key, meta] of Object.entries(GAUGE_MAP)) {
@@ -608,6 +670,7 @@
 
         document.getElementById('woka-slider').addEventListener('input', event => setWokaRatio(event.target.value));
         document.getElementById('chart-mode').addEventListener('change', event => setChartMode(event.target.value));
+        document.getElementById('sim-rain-slider').addEventListener('input', updateSimulation);
 
         fetchForecasts();
         setInterval(fetchForecasts, 300000);

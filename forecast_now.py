@@ -217,16 +217,17 @@ def generate_multi_forecast():
                     'precip_mm': safe_float(r['precip_expected_mm'])
                 })
 
-    # 🆕 Generate Event-Mode Simulations
+    # 🆕 Generate Event-Mode Simulations (0" to 3" in 0.5" steps)
     try:
         from simulate_event import simulate_rain
-        sim_results = {
-            "1in": simulate_rain(1.0),
-            "2in": simulate_rain(2.0)
-        }
+        sim_results = {}
+        for amt in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
+            key = f"{amt}in"
+            sim_results[key] = simulate_rain(amt)
+            
         with open('simulations.json', 'w') as f:
             json.dump(sim_results, f, indent=4)
-        print("✅ Rain Simulations Generated (1\" and 2\").")
+        print("✅ Rain Simulations Generated (0.5\" to 3.0\").")
     except Exception as e:
         print(f"⚠️ Simulation generation failed: {e}")
 
