@@ -314,7 +314,7 @@
                 else warning.classList.add('hidden');
             }
 
-            renderForecastCards(latestForecast);
+            renderForecastCards(latestForecast, 'dashboard');
             renderHistoryChart(latestHistory, latestForecast);
         }
 
@@ -322,14 +322,16 @@
             settings.horizon = val;
             saveSettings();
             updateSettingsUI();
-            renderForecastCards(latestForecast);
+            renderForecastCards(latestForecast, 'dashboard');
+            updateSimulation();
         }
 
         function setWokaRatio(value) {
             settings.wokaRatio = Number(value);
             saveSettings();
             updateSettingsUI();
-            renderForecastCards(latestForecast);
+            renderForecastCards(latestForecast, 'dashboard');
+            updateSimulation();
         }
 
         function setChartMode(value) {
