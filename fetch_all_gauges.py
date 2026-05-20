@@ -55,7 +55,7 @@ def fetch_river_network(days=7):
     return final_df
 
 if __name__ == "__main__":
-    river_data = fetch_river_network(days=5)
+    river_data = fetch_river_network(days=10)
     if not river_data.empty:
         river_data.to_csv('illinois_river_network.csv')
         print(f"✅ Data saved to illinois_river_network.csv ({len(river_data)} records)")

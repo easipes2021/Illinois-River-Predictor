@@ -132,7 +132,7 @@ def generate_multi_forecast():
     if not comp_range.empty:
         for key in ['hwy_16_flow', 'hwy_59_flow_est', 'watts_ok_flow']:
             if key in comp_range.columns:
-                history_results['comparison'][key] = comp_range[key].tolist()
+                history_results['comparison'][key] = [safe_float(x, None) for x in comp_range[key]]
 
     last_known_values = {}
     limits = {
@@ -245,7 +245,4 @@ def generate_multi_forecast():
 
 
 if __name__ == '__main__':
-    generate_multi_forecast()
-
-if __name__ == "__main__":
     generate_multi_forecast()
