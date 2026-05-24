@@ -164,6 +164,21 @@ def merge_datasets():
             master_df[f'{col}_trend_6h'] = master_df[col].diff(6).fillna(0)
 
     master_df = master_df.dropna(subset=['hwy_59_height', 'watts_ok_height'], how='all')
+
+    existing_path = 'master_training_data.csv'
+    if os.path.exists(existing_path):
+        try:
+            existing_df = pd.read_csv(existing_path, index_col=0, parse_dates=True)
+            # Combine existing data with the newly fetched/merged data
+            combined_df = pd.concat([existing_df, master_df])
+            # Drop duplicate timestamps, keeping the newest/most complete record
+            combined_df = combined_df[~combined_df.index.duplicated(keep='last')]
+            # Sort chronologically
+            master_df = combined_df.sort_index()
+            print(f"✅ Incremental merge successful: Cumulative history preserved. Total rows: {len(master_df)}")
+        except Exception as e:
+            print(f"⚠️ Error appending to existing master_training_data.csv: {e}")
+
     master_df.to_csv('master_training_data.csv')
 
     print(f"🚀 Success! Master dataset saved with {len(master_df)} rows.")

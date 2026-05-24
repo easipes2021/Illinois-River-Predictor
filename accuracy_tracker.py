@@ -253,8 +253,8 @@ def generate_accuracy_scores():
             h_key = f'{h}h'
             h_entries = [e for e in gauge_entries if e['horizon'] == h_key]
 
-            # Use last 48 scored predictions for metrics
-            recent = h_entries[-48:] if len(h_entries) > 48 else h_entries
+            # Use last 1500 scored predictions (approx 30 days) for metrics
+            recent = h_entries[-1500:] if len(h_entries) > 1500 else h_entries
 
             if len(recent) < 10:
                 horizons_data[h_key] = {
