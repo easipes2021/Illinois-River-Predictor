@@ -45,8 +45,8 @@ jobs:
           python merge_data.py
           echo "merge_data.py completed"
           ls -la *.csv
-          python predict_all.py
-          echo "predict_all.py completed"
+          # python predict_all.py  # SKIPPED: Models are pre-trained
+          # echo "predict_all.py completed"
           python forecast_now.py
           echo "forecast_now.py completed"
           ls -la forecasts.json history.json weather.json

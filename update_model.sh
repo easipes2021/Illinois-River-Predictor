@@ -12,8 +12,8 @@ python3 fetch_weather.py
 echo "--- STEP 3: Merging & Applying SSKP Rating Table ---"
 python3 merge_data.py
 
-echo "--- STEP 4: Training & Refining AI Models ---"
-python3 predict_all.py
+echo "--- STEP 4: Training & Refining AI Models (SKIPPED) ---"
+# python3 predict_all.py  # Models are now pre-trained on a large 2-year historical dataset
 
 echo "--- STEP 5: Generating System Dashboard ---"
 python3 forecast_now.py

@@ -1,0 +1,47 @@
+name: Retrain AI Models (Historical Data)
+
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  retrain-models:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Historical Bootstrapping
+        run: |
+          echo "Starting historical data fetch and retraining..."
+          python bootstrap_history.py
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Commit and Push Updated Models
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name 'Illinois-River-Bot'
+          git config --global user.email 'bot@illinoisriver.ai'
+          
+          # Add the large historical CSV and the trained model files
+          git add master_training_data.csv illinois_river_network.csv regional_precip_actual.csv *.pkl
+          
+          git diff --cached --quiet || git commit -m "Manual Retraining: Updated AI models using 2 years of history"
+          git push origin HEAD:main

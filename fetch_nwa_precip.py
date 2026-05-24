@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 from datetime import datetime, timedelta
 
-def fetch_regional_precip():
+def fetch_regional_precip(days=10):
     # Key locations in the watershed (Lat, Lon)
     locations = {
         'precip_fayetteville': (36.06, -94.17),
@@ -13,7 +13,7 @@ def fetch_regional_precip():
     
     # Time window for the pull
     end_date = datetime.now().strftime('%Y-%m-%d')
-    start_date = (datetime.now() - timedelta(days=10)).strftime('%Y-%m-%d')
+    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     
     precip_data = []
     timeout_seconds = 10  # 🆕 Add timeout to prevent hanging
