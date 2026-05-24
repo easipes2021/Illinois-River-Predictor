@@ -197,7 +197,7 @@ def generate_multi_forecast():
         'hwy_59_flow_est': ('Hwy 59 (AR Bridge)', 'EST. CFS'),
         'lake_francis_height': ('Lake Francis Level', 'ft (MSL)'),
         'watts_ok_flow': ('Watts Bridge (OK)', 'CFS'),
-        'savoy_height': ('Savoy Upstream', 'ft'),
+        'savoy_flow': ('Savoy Upstream', 'CFS'),
         'osage_creek_flow': ('Osage Creek', 'CFS')
     }
 

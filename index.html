@@ -216,25 +216,7 @@
                             <p class="text-xs text-slate-500 mt-2">Use this slider to adjust the estimated WOKA flow
                                 scaling from Watts Bridge.</p>
                         </div>
-                        <div>
-                            <label for="chart-mode" class="text-sm text-slate-400 mb-2 inline-block">Chart view</label>
-                            <select id="chart-mode"
-                                class="w-full rounded-2xl bg-slate-900 border border-slate-700 p-3 text-slate-100">
-                                <option value="compare">Compare Hwy 16 + Hwy 59</option>
-                                <option value="hwy_16_flow">Hwy 16 (Siloam)</option>
-                                <option value="hwy_59_flow_est">Hwy 59 (AR Bridge)</option>
-                            </select>
-                        </div>
-                        <div class="pt-2 flex flex-col gap-2">
-                            <button id="toggle-comparison" onclick="toggleComparison()"
-                                class="w-full rounded-2xl bg-slate-900 border border-slate-700 p-3 text-slate-400 text-sm font-medium transition-all hover:bg-slate-800">
-                                Show Last Week Overlay
-                            </button>
-                            <button id="toggle-upstream" onclick="toggleUpstream()"
-                                class="w-full rounded-2xl bg-slate-900 border border-slate-700 p-3 text-slate-400 text-sm font-medium transition-all hover:bg-slate-800">
-                                Show Upstream Inputs (Savoy & Osage)
-                            </button>
-                        </div>
+
                     </div>
                 </section>
 
@@ -260,6 +242,23 @@
                     <h2 class="text-2xl font-semibold">Recent gauge trend</h2>
                 </div>
                 <div class="text-sm text-slate-400">Data snapshot: <span id="history-update">Loading...</span></div>
+            </div>
+            
+            <!-- 🆕 PHASE 3: Unified Graphing Panel Controls -->
+            <div class="mb-5 flex flex-wrap items-center gap-3 bg-slate-900/50 p-4 rounded-2xl border border-slate-700/50">
+                <span class="text-xs uppercase tracking-widest text-slate-500 font-bold mr-2">Plot Gauges:</span>
+                
+                <button id="btn-gauge-savoy_flow" onclick="toggleGauge('savoy_flow')" class="px-3 py-1.5 rounded-full text-xs font-bold border transition-all">Savoy</button>
+                <button id="btn-gauge-osage_creek_flow" onclick="toggleGauge('osage_creek_flow')" class="px-3 py-1.5 rounded-full text-xs font-bold border transition-all">Osage</button>
+                <button id="btn-gauge-hwy_16_flow" onclick="toggleGauge('hwy_16_flow')" class="px-3 py-1.5 rounded-full text-xs font-bold border transition-all">Hwy 16</button>
+                <button id="btn-gauge-hwy_59_flow_est" onclick="toggleGauge('hwy_59_flow_est')" class="px-3 py-1.5 rounded-full text-xs font-bold border transition-all">Hwy 59</button>
+                <button id="btn-gauge-watts_ok_flow" onclick="toggleGauge('watts_ok_flow')" class="px-3 py-1.5 rounded-full text-xs font-bold border transition-all">Watts</button>
+                
+                <div class="h-6 w-px bg-slate-700 mx-2 hidden sm:block"></div>
+                
+                <button id="btn-toggle-comparison" onclick="toggleComparison()" class="px-3 py-1.5 rounded-full text-xs font-bold border transition-all ml-auto">
+                    Last Week Overlay
+                </button>
             </div>
             <div class="relative h-96">
                 <canvas id="historyChart" class="w-full h-full"></canvas>
@@ -299,16 +298,15 @@
             'hwy_59_flow_est': { name: 'Hwy 59 (AR Bridge)', unit: 'EST. CFS', color: '#f97316' },
             'lake_francis_height': { name: 'Lake Francis', unit: 'ft (MSL)', color: '#a78bfa' },
             'watts_ok_flow': { name: 'Watts Bridge (OK)', unit: 'CFS', color: '#22c55e' },
-            'savoy_height': { name: 'Savoy', unit: 'ft', color: '#a78bfa' },
+            'savoy_flow': { name: 'Savoy', unit: 'CFS', color: '#818cf8' },
             'osage_creek_flow': { name: 'Osage Creek', unit: 'CFS', color: '#c084fc' }
         };
 
         const DEFAULT_SETTINGS = {
             wokaRatio: 0.82,
-            chartMode: 'compare',
             horizon: 6,
             showComparison: false,
-            showUpstream: false
+            visibleGauges: ['hwy_16_flow', 'hwy_59_flow_est']
         };
 
         let settings = { ...DEFAULT_SETTINGS };
@@ -337,10 +335,8 @@
         function updateSettingsUI() {
             const slider = document.getElementById('woka-slider');
             const wokaText = document.getElementById('woka-ratio-value');
-            const chartMode = document.getElementById('chart-mode');
             slider.value = settings.wokaRatio;
             wokaText.innerText = settings.wokaRatio.toFixed(2);
-            chartMode.value = settings.chartMode;
 
             [6, 12, 24].forEach(h => {
                 const btn = document.getElementById(`btn-horizon-${h}`);
@@ -351,23 +347,44 @@
                 }
             });
 
-            const compToggle = document.getElementById('toggle-comparison');
+            const compToggle = document.getElementById('btn-toggle-comparison');
             if (compToggle) {
                 compToggle.className = settings.showComparison
-                    ? "w-full rounded-2xl bg-sky-900/40 border border-sky-500/50 p-3 text-sky-200 text-sm font-medium transition-all"
-                    : "w-full rounded-2xl bg-slate-900 border border-slate-700 p-3 text-slate-400 text-sm font-medium transition-all hover:bg-slate-800";
-                compToggle.innerText = settings.showComparison ? "Showing Last Week Overlay" : "Show Last Week Overlay";
+                    ? "px-3 py-1.5 rounded-full text-xs font-bold transition-all bg-sky-900/40 border border-sky-500/50 text-sky-300 ml-auto"
+                    : "px-3 py-1.5 rounded-full text-xs font-bold transition-all bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700 ml-auto";
             }
 
-            const upToggle = document.getElementById('toggle-upstream');
-            if (upToggle) {
-                upToggle.className = settings.showUpstream
-                    ? "w-full rounded-2xl bg-purple-900/40 border border-purple-500/50 p-3 text-purple-200 text-sm font-medium transition-all"
-                    : "w-full rounded-2xl bg-slate-900 border border-slate-700 p-3 text-slate-400 text-sm font-medium transition-all hover:bg-slate-800";
-                upToggle.innerText = settings.showUpstream ? "Showing Upstream Inputs" : "Show Upstream Inputs (Savoy & Osage)";
-            }
+            // Update gauge checkboxes
+            const gaugeKeys = ['savoy_flow', 'osage_creek_flow', 'hwy_16_flow', 'hwy_59_flow_est', 'watts_ok_flow'];
+            gaugeKeys.forEach(key => {
+                const btn = document.getElementById(`btn-gauge-${key}`);
+                if (btn) {
+                    const isActive = settings.visibleGauges.includes(key);
+                    const color = GAUGE_MAP[key].color;
+                    if (isActive) {
+                        btn.style.backgroundColor = `${color}20`; // 20% opacity background
+                        btn.style.borderColor = color;
+                        btn.style.color = color;
+                    } else {
+                        btn.style.backgroundColor = '';
+                        btn.style.borderColor = 'rgba(51,65,85,1)';
+                        btn.style.color = '#94a3b8';
+                    }
+                }
+            });
 
             document.getElementById('forecast-horizon').innerText = `Forecast horizon: ${settings.horizon}h projection`;
+        }
+
+        function toggleGauge(key) {
+            if (settings.visibleGauges.includes(key)) {
+                settings.visibleGauges = settings.visibleGauges.filter(k => k !== key);
+            } else {
+                settings.visibleGauges.push(key);
+            }
+            saveSettings();
+            updateSettingsUI();
+            renderHistoryChart(latestHistory, latestForecast);
         }
 
         function toggleComparison() {
@@ -377,12 +394,7 @@
             renderHistoryChart(latestHistory, latestForecast);
         }
 
-        function toggleUpstream() {
-            settings.showUpstream = !settings.showUpstream;
-            saveSettings();
-            updateSettingsUI();
-            renderHistoryChart(latestHistory, latestForecast);
-        }
+
 
         function updateSimulation() {
             const amount = parseFloat(document.getElementById('sim-rain-slider').value);
@@ -460,12 +472,7 @@
             updateSimulation();
         }
 
-        function setChartMode(value) {
-            settings.chartMode = value;
-            saveSettings();
-            updateSettingsUI();
-            renderHistoryChart(latestHistory);
-        }
+
 
         function showPageMessage(message, type = 'info') {
             const messageBox = document.getElementById('page-message');
@@ -773,9 +780,8 @@
                 return;
             }
 
-            const mode = settings.chartMode;
             const datasets = [];
-            const availableKeys = ['hwy_16_flow', 'hwy_59_flow_est'];
+            const availableKeys = settings.visibleGauges;
 
             availableKeys.forEach(key => {
                 const gauge = data.gauges[key];
@@ -784,107 +790,82 @@
                 const historyPoints = gauge.history.map(point => ({ x: new Date(point.timestamp), y: point.value }));
                 if (!historyPoints.length) return;
 
-                if (mode === 'compare' || mode === key) {
-                    // 1. History Dataset
+                // 1. History Dataset
+                datasets.push({
+                    label: gauge.name,
+                    data: historyPoints,
+                    borderColor: GAUGE_MAP[key]?.color || '#60a5fa',
+                    backgroundColor: 'transparent',
+                    tension: 0.3,
+                    pointRadius: 0,
+                    borderWidth: 3
+                });
+
+                // 2. Forecast Dataset (Extension)
+                if (forecastData && forecastData[key]) {
+                    const baseTime = new Date(forecastData.timestamp);
+
+                    // Use simulation values if active
+                    let p6 = forecastData[key].projected_6h;
+                    let p12 = forecastData[key].projected_12h;
+                    let p24 = forecastData[key].projected_24h;
+
+                    if (activeSimulation !== 'none' && latestSimulations && latestSimulations[activeSimulation]) {
+                        const sim = latestSimulations[activeSimulation];
+                        if (sim[key]) {
+                            p6 = sim[key].projected_6h;
+                            p12 = sim[key].projected_12h;
+                            p24 = sim[key].projected_24h;
+                        }
+                    }
+
+                    const forecastPoints = [
+                        { x: historyPoints[historyPoints.length - 1].x, y: historyPoints[historyPoints.length - 1].y },
+                        { x: new Date(baseTime.getTime() + 6 * 3600000), y: p6 },
+                        { x: new Date(baseTime.getTime() + 12 * 3600000), y: p12 },
+                        { x: new Date(baseTime.getTime() + 24 * 3600000), y: p24 }
+                    ].filter(p => p.y != null);
+
                     datasets.push({
-                        label: gauge.name,
-                        data: historyPoints,
+                        label: `${gauge.name} (FCST)`,
+                        data: forecastPoints,
                         borderColor: GAUGE_MAP[key]?.color || '#60a5fa',
                         backgroundColor: 'transparent',
-                        tension: 0.3,
-                        pointRadius: 0,
-                        borderWidth: 3
+                        borderDash: [6, 4],
+                        tension: 0.1,
+                        pointRadius: 4,
+                        pointBackgroundColor: GAUGE_MAP[key]?.color || '#60a5fa',
+                        borderWidth: 2
                     });
+                }
 
-                    // 2. Forecast Dataset (Extension)
-                    if (forecastData && forecastData[key]) {
-                        const baseTime = new Date(forecastData.timestamp);
+                // 3. Comparison Dataset (Last Week Overlay)
+                if (settings.showComparison && data.comparison && data.comparison[key]) {
+                    const compValues = data.comparison[key];
+                    // Align the last week's data to the current time axis for comparison
+                    const compPoints = historyPoints.map((p, i) => ({
+                        x: p.x,
+                        y: compValues[i] !== undefined ? compValues[i] : null
+                    })).filter(p => p.y !== null);
 
-                        // Use simulation values if active
-                        let p6 = forecastData[key].projected_6h;
-                        let p12 = forecastData[key].projected_12h;
-                        let p24 = forecastData[key].projected_24h;
-
-                        if (activeSimulation !== 'none' && latestSimulations && latestSimulations[activeSimulation]) {
-                            const sim = latestSimulations[activeSimulation];
-                            if (sim[key]) {
-                                p6 = sim[key].projected_6h;
-                                p12 = sim[key].projected_12h;
-                                p24 = sim[key].projected_24h;
-                            }
-                        }
-
-                        const forecastPoints = [
-                            { x: historyPoints[historyPoints.length - 1].x, y: historyPoints[historyPoints.length - 1].y },
-                            { x: new Date(baseTime.getTime() + 6 * 3600000), y: p6 },
-                            { x: new Date(baseTime.getTime() + 12 * 3600000), y: p12 },
-                            { x: new Date(baseTime.getTime() + 24 * 3600000), y: p24 }
-                        ].filter(p => p.y != null);
-
-                        datasets.push({
-                            label: `${gauge.name} (FCST)`,
-                            data: forecastPoints,
-                            borderColor: GAUGE_MAP[key]?.color || '#60a5fa',
-                            backgroundColor: 'transparent',
-                            borderDash: [6, 4],
-                            tension: 0.1,
-                            pointRadius: 4,
-                            pointBackgroundColor: GAUGE_MAP[key]?.color || '#60a5fa',
-                            borderWidth: 2
-                        });
-                    }
-
-                    // 3. Comparison Dataset (Last Week Overlay)
-                    if (settings.showComparison && data.comparison && data.comparison[key]) {
-                        const compValues = data.comparison[key];
-                        // Align the last week's data to the current time axis for comparison
-                        const compPoints = historyPoints.map((p, i) => ({
-                            x: p.x,
-                            y: compValues[i] !== undefined ? compValues[i] : null
-                        })).filter(p => p.y !== null);
-
-                        datasets.push({
-                            label: `${gauge.name} (Last Week)`,
-                            data: compPoints,
-                            borderColor: GAUGE_MAP[key]?.color || '#60a5fa',
-                            backgroundColor: 'transparent',
-                            borderWidth: 1,
-                            pointRadius: 0,
-                            tension: 0.3,
-                            fill: false,
-                            opacity: 0.3,
-                            borderDash: [2, 2],
-                            yAxisID: 'y'
-                        });
-                    }
+                    datasets.push({
+                        label: `${gauge.name} (Last Week)`,
+                        data: compPoints,
+                        borderColor: GAUGE_MAP[key]?.color || '#60a5fa',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        tension: 0.3,
+                        fill: false,
+                        opacity: 0.3,
+                        borderDash: [2, 2]
+                    });
                 }
             });
 
-            // 4. Upstream Gauge Overlay
-            if (settings.showUpstream) {
-                ['savoy_height', 'osage_creek_flow'].forEach(upKey => {
-                    const upGauge = data.gauges[upKey];
-                    if (upGauge && upGauge.history.length) {
-                        const upPoints = upGauge.history.map(point => ({ x: new Date(point.timestamp), y: point.value }));
-                        datasets.push({
-                            label: `${upGauge.name} (${upGauge.unit})`,
-                            data: upPoints,
-                            borderColor: GAUGE_MAP[upKey]?.color || '#c084fc',
-                            backgroundColor: 'transparent',
-                            borderWidth: 2,
-                            pointRadius: 0,
-                            tension: 0.3,
-                            fill: false,
-                            borderDash: [4, 4],
-                            yAxisID: upKey === 'savoy_height' ? 'y2' : 'y'
-                        });
-                    }
-                });
-            }
-
             if (!datasets.length) {
                 canvas.style.display = 'none';
-                message.innerText = 'No historical gauge values found for the selected chart view.';
+                message.innerText = 'Select at least one gauge to view the chart.';
                 message.style.display = 'flex';
                 updateNode.innerText = '';
                 return;
@@ -913,16 +894,9 @@
                         },
                         y: {
                             grid: { color: 'rgba(51,65,85,0.5)' },
-                            ticks: { color: '#94a3b8' }
-                        },
-                        ...(settings.showUpstream ? {
-                            y2: {
-                                position: 'right',
-                                grid: { drawOnChartArea: false },
-                                ticks: { color: '#a78bfa' },
-                                title: { display: true, text: 'Height (ft)', color: '#a78bfa' }
-                            }
-                        } : {})
+                            ticks: { color: '#94a3b8' },
+                            title: { display: true, text: 'Flow (CFS)', color: '#94a3b8' }
+                        }
                     }
                 }
             };
