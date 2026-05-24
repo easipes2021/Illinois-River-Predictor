@@ -10,7 +10,6 @@ def retrain_models():
     locations = {
         'hwy_16_flow': 'Hwy 16',
         'hwy_59_flow_est': 'Hwy 59',
-        'lake_francis_height': 'Lake Francis',
         'watts_ok_flow': 'Watts Bridge'
     }
 
@@ -34,7 +33,7 @@ def retrain_models():
         # 🆕 PHASE 1: Multiple precipitation windows
         'precip_fayetteville_24h', 'precip_fayetteville_48h', 'precip_fayetteville_168h',
         # Seasonal & storage
-        'seasonal_cycle', 'lake_headroom',
+        'seasonal_cycle',
         # 🆕 PHASE 1: Hour-of-day features
         'hour_sin', 'hour_cos'
     ]

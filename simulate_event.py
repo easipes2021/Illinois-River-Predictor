@@ -138,7 +138,7 @@ def simulate_rain(added_inches, verbose=False):
     response_curves = compute_rain_response_curves(df)
 
     # ---------------------------------------- gauges and horizons to predict
-    gauges   = ['hwy_16_flow', 'hwy_59_flow_est', 'lake_francis_height', 'watts_ok_flow']
+    gauges   = ['hwy_16_flow', 'hwy_59_flow_est', 'watts_ok_flow']
     horizons = [6, 12, 24]
 
     results = {}

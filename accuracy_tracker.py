@@ -20,7 +20,6 @@ MAX_LOG_AGE_DAYS = 30
 GAUGE_NAMES = {
     'hwy_16_flow': 'Hwy 16 (Siloam)',
     'hwy_59_flow_est': 'Hwy 59 (AR Bridge)',
-    'lake_francis_height': 'Lake Francis Level',
     'watts_ok_flow': 'Watts Bridge (OK)'
 }
 

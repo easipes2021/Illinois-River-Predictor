@@ -18,7 +18,6 @@ def train_multi_models():
     base_targets = [
         'hwy_16_flow',
         'hwy_59_flow_est', 
-        'lake_francis_height',
         'watts_ok_flow'
     ]
     horizons = [6, 12, 24]
@@ -76,7 +75,6 @@ def train_multi_models():
         
         # --- Soil & Seasonal Logic ---
         'seasonal_cycle',
-        'lake_headroom',
         
         # --- 🆕 PHASE 1: Hour-of-Day Features ---
         'hour_sin',

@@ -94,7 +94,6 @@ def generate_multi_forecast():
         'precip_fayetteville_168h',
         # Seasonal & storage
         'seasonal_cycle',
-        'lake_headroom',
         # 🆕 PHASE 1: Hour-of-day features
         'hour_sin',
         'hour_cos'
@@ -166,6 +165,11 @@ def generate_multi_forecast():
             last_known_values[key] = current_val
 
         forecast_results[key] = {'current': None if current_val is None else round(current_val, 2)}
+        
+        if key == 'lake_francis_height':
+            for h in [6, 12, 24]:
+                forecast_results[key][f'projected_{h}h'] = None
+            continue
         
         for h in [6, 12, 24]:
             model_path = f'model_{key}_{h}h.pkl'
