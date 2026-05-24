@@ -109,6 +109,22 @@
             </div>
         </div>
 
+        <!-- 🆕 PHASE 2: Storm Mode Banner (Hidden by default) -->
+        <div id="storm-mode-banner" class="hidden mb-6 flex items-start gap-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 text-rose-200/95 text-xs sm:text-sm shadow-[0_0_15px_rgba(244,63,94,0.15)] relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-2 opacity-5">
+                <svg class="w-24 h-24 text-rose-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+            </div>
+            <div class="flex-shrink-0 mt-0.5">
+                <svg class="h-5 w-5 text-rose-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <div class="relative z-10">
+                <h4 class="font-bold text-rose-400 mb-0.5 text-base tracking-wide uppercase">Active Storm Mode</h4>
+                <p id="storm-mode-text" class="leading-relaxed text-rose-300">Significant rainfall detected upstream. Elevated flows are propagating through the basin.</p>
+            </div>
+        </div>
+
         <div id="page-message" class="hidden mb-6 rounded-xl p-4 bg-slate-800 text-slate-200 text-sm"></div>
 
         <div class="grid gap-6 xl:grid-cols-[2fr_1fr]">
@@ -209,10 +225,14 @@
                                 <option value="hwy_59_flow_est">Hwy 59 (AR Bridge)</option>
                             </select>
                         </div>
-                        <div class="pt-2">
+                        <div class="pt-2 flex flex-col gap-2">
                             <button id="toggle-comparison" onclick="toggleComparison()"
                                 class="w-full rounded-2xl bg-slate-900 border border-slate-700 p-3 text-slate-400 text-sm font-medium transition-all hover:bg-slate-800">
                                 Show Last Week Overlay
+                            </button>
+                            <button id="toggle-upstream" onclick="toggleUpstream()"
+                                class="w-full rounded-2xl bg-slate-900 border border-slate-700 p-3 text-slate-400 text-sm font-medium transition-all hover:bg-slate-800">
+                                Show Upstream Inputs (Savoy & Osage)
                             </button>
                         </div>
                     </div>
@@ -278,14 +298,17 @@
             'hwy_16_flow': { name: 'Hwy 16 (Siloam)', unit: 'CFS', color: '#38bdf8' },
             'hwy_59_flow_est': { name: 'Hwy 59 (AR Bridge)', unit: 'EST. CFS', color: '#f97316' },
             'lake_francis_height': { name: 'Lake Francis', unit: 'ft (MSL)', color: '#a78bfa' },
-            'watts_ok_flow': { name: 'Watts Bridge (OK)', unit: 'CFS', color: '#22c55e' }
+            'watts_ok_flow': { name: 'Watts Bridge (OK)', unit: 'CFS', color: '#22c55e' },
+            'savoy_height': { name: 'Savoy', unit: 'ft', color: '#a78bfa' },
+            'osage_creek_flow': { name: 'Osage Creek', unit: 'CFS', color: '#c084fc' }
         };
 
         const DEFAULT_SETTINGS = {
             wokaRatio: 0.82,
             chartMode: 'compare',
             horizon: 6,
-            showComparison: false
+            showComparison: false,
+            showUpstream: false
         };
 
         let settings = { ...DEFAULT_SETTINGS };
@@ -336,11 +359,26 @@
                 compToggle.innerText = settings.showComparison ? "Showing Last Week Overlay" : "Show Last Week Overlay";
             }
 
+            const upToggle = document.getElementById('toggle-upstream');
+            if (upToggle) {
+                upToggle.className = settings.showUpstream
+                    ? "w-full rounded-2xl bg-purple-900/40 border border-purple-500/50 p-3 text-purple-200 text-sm font-medium transition-all"
+                    : "w-full rounded-2xl bg-slate-900 border border-slate-700 p-3 text-slate-400 text-sm font-medium transition-all hover:bg-slate-800";
+                upToggle.innerText = settings.showUpstream ? "Showing Upstream Inputs" : "Show Upstream Inputs (Savoy & Osage)";
+            }
+
             document.getElementById('forecast-horizon').innerText = `Forecast horizon: ${settings.horizon}h projection`;
         }
 
         function toggleComparison() {
             settings.showComparison = !settings.showComparison;
+            saveSettings();
+            updateSettingsUI();
+            renderHistoryChart(latestHistory, latestForecast);
+        }
+
+        function toggleUpstream() {
+            settings.showUpstream = !settings.showUpstream;
             saveSettings();
             updateSettingsUI();
             renderHistoryChart(latestHistory, latestForecast);
@@ -494,6 +532,19 @@
                 latestForecast = forecastData;
                 clearPageMessage();
                 renderForecastCards(forecastData, 'dashboard');
+                
+                // 🆕 PHASE 2: Storm Mode Activation Logic
+                const stormBanner = document.getElementById('storm-mode-banner');
+                if (weatherData && weatherData.saturation && weatherData.saturation.recent_24h > 25.4) {
+                    stormBanner.classList.remove('hidden');
+                    // Automatically switch to 24h view if we're in a storm
+                    if (settings.horizon === 6) {
+                        setHorizon(24);
+                    }
+                } else {
+                    stormBanner.classList.add('hidden');
+                }
+
                 updateSimulation(); // Update simulation if slider is set
                 const dt = new Date(forecastData.timestamp);
                 document.getElementById('update-time').innerText = dt.toLocaleTimeString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -620,6 +671,27 @@
             return `<span class="confidence-badge ${cssClass}" title="Model confidence: ${score}/100 (${label})">${score} ${label}${trendHtml}</span>`;
         }
 
+        // 🆕 PHASE 2: Flood stage thresholds
+        const FLOOD_THRESHOLDS = {
+            'hwy_16_flow': { action: 1500, flood: 3000, major: 5000 },
+            'hwy_59_flow_est': { action: 2000, flood: 4000, major: 7000 },
+            'watts_ok_flow': { action: 2500, flood: 5000, major: 10000 }
+        };
+
+        function getFloodBadge(gaugeKey, value) {
+            if (!FLOOD_THRESHOLDS[gaugeKey] || value == null) return '';
+            const t = FLOOD_THRESHOLDS[gaugeKey];
+            
+            if (value >= t.major) {
+                return `<span class="inline-flex items-center gap-1 rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-400 border border-rose-500/30 ml-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Major Flood</span>`;
+            } else if (value >= t.flood) {
+                return `<span class="inline-flex items-center gap-1 rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-orange-400 border border-orange-500/30 ml-2"><span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>Flood</span>`;
+            } else if (value >= t.action) {
+                return `<span class="inline-flex items-center gap-1 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400 border border-amber-500/30 ml-2"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Action</span>`;
+            }
+            return `<span class="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400 border border-emerald-500/20 ml-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Normal</span>`;
+        }
+
         function createCard(parent, title, vals, unit, accentColor = '#3b82f6', gaugeKey = null) {
             const precision = unit.includes('ft') ? 2 : 1;
             const hasCurrent = vals.current !== null && vals.current !== undefined;
@@ -631,20 +703,33 @@
             const trendIcon = hasCurrent && hasProjected ? (diff >= 0 ? '▲' : '▼') : '';
 
             const badge = gaugeKey ? getConfidenceBadge(gaugeKey) : '';
+            const floodBadge = gaugeKey && hasCurrent ? getFloodBadge(gaugeKey, vals.current) : '';
+
+            // 🆕 PHASE 2: Gauge Staleness
+            let stalenessWarning = '';
+            if (latestForecast && latestForecast.timestamp) {
+                const forecastTime = new Date(latestForecast.timestamp).getTime();
+                const now = new Date().getTime();
+                const hoursOld = (now - forecastTime) / (1000 * 60 * 60);
+                if (hoursOld > 3) {
+                    stalenessWarning = `<p class="text-xs text-amber-500/90 mt-1.5 font-medium flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Data is ${Math.round(hoursOld)}h old</p>`;
+                }
+            }
 
             const card = document.createElement('div');
-            card.className = 'river-card bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700';
+            card.className = 'river-card bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700 relative overflow-hidden';
             card.style.borderLeftColor = accentColor;
             
             if (gaugeKey === 'lake_francis_height') {
                 card.innerHTML = `
-                    <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-start justify-between gap-4 relative z-10">
                         <div>
                             <div class="flex items-center gap-2 mb-3">
                                 <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-[0.18em]">${title}</h3>
                             </div>
                             <p class="text-4xl font-semibold font-mono">${currentText} <span class="text-sm font-normal text-slate-500">${unit}</span></p>
                             <p class="text-xs text-slate-500 mt-2">Current reading</p>
+                            ${stalenessWarning}
                         </div>
                         <div class="text-right max-w-[170px]">
                             <p class="text-sm font-bold text-slate-400">Regulated Level</p>
@@ -654,14 +739,16 @@
                 `;
             } else {
                 card.innerHTML = `
-                    <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-start justify-between gap-4 relative z-10">
                         <div>
-                            <div class="flex items-center gap-2 mb-3">
+                            <div class="flex flex-wrap items-center gap-y-2 gap-x-2 mb-3">
                                 <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-[0.18em]">${title}</h3>
                                 ${badge}
+                                ${floodBadge}
                             </div>
                             <p class="text-4xl font-semibold font-mono">${currentText} <span class="text-sm font-normal text-slate-500">${unit}</span></p>
                             <p class="text-xs text-slate-500 mt-2">Current reading</p>
+                            ${stalenessWarning}
                         </div>
                         <div class="text-right">
                             <p class="text-3xl font-semibold font-mono ${trendClass}">${trendIcon} ${projectedText}</p>
@@ -766,11 +853,34 @@
                             tension: 0.3,
                             fill: false,
                             opacity: 0.3,
-                            borderDash: [2, 2]
+                            borderDash: [2, 2],
+                            yAxisID: 'y'
                         });
                     }
                 }
             });
+
+            // 4. Upstream Gauge Overlay
+            if (settings.showUpstream) {
+                ['savoy_height', 'osage_creek_flow'].forEach(upKey => {
+                    const upGauge = data.gauges[upKey];
+                    if (upGauge && upGauge.history.length) {
+                        const upPoints = upGauge.history.map(point => ({ x: new Date(point.timestamp), y: point.value }));
+                        datasets.push({
+                            label: `${upGauge.name} (${upGauge.unit})`,
+                            data: upPoints,
+                            borderColor: GAUGE_MAP[upKey]?.color || '#c084fc',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.3,
+                            fill: false,
+                            borderDash: [4, 4],
+                            yAxisID: upKey === 'savoy_height' ? 'y2' : 'y'
+                        });
+                    }
+                });
+            }
 
             if (!datasets.length) {
                 canvas.style.display = 'none';
@@ -798,14 +908,21 @@
                         x: {
                             type: 'time',
                             time: { unit: 'hour', displayFormats: { hour: 'MMM d ha' } },
-                            grid: { color: 'rgba(148,163,184,0.16)' },
-                            ticks: { color: '#cbd5e1' }
+                            grid: { color: 'rgba(51,65,85,0.5)' },
+                            ticks: { color: '#94a3b8' }
                         },
                         y: {
-                            beginAtZero: false,
-                            grid: { color: 'rgba(148,163,184,0.16)' },
-                            ticks: { color: '#cbd5e1' }
-                        }
+                            grid: { color: 'rgba(51,65,85,0.5)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        ...(settings.showUpstream ? {
+                            y2: {
+                                position: 'right',
+                                grid: { drawOnChartArea: false },
+                                ticks: { color: '#a78bfa' },
+                                title: { display: true, text: 'Height (ft)', color: '#a78bfa' }
+                            }
+                        } : {})
                     }
                 }
             };

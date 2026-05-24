@@ -34,55 +34,68 @@ def train_multi_models():
             print(f"⚠️ Warning: {col} not found in CSV. Skipping targets.")
 
     # 4. Features: The AI's "Eyes"
-    # MUST match exactly what merge_data.py outputs
-    features = [
-        # --- Current Levels ---
+    base_features = [
+        # --- Current Levels (Upstream) ---
         'savoy_height', 
         'osage_creek_flow', 
-        'hwy_59_height',
         
-        # --- Original Lagged Features (The "Wave Detector") ---
-        'savoy_height_3h_ago', 
-        'savoy_height_6h_ago', 
-        'osage_creek_flow_3h_ago', 
-        'osage_creek_flow_6h_ago',
+        # --- Original Lagged Features ---
+        'savoy_height_3h_ago', 'savoy_height_6h_ago', 
+        'osage_creek_flow_3h_ago', 'osage_creek_flow_6h_ago',
         
-        # --- 🆕 PHASE 1: Extended Lag Features ---
-        'savoy_height_12h_ago',
-        'savoy_height_24h_ago',
-        'osage_creek_flow_12h_ago',
-        'osage_creek_flow_24h_ago',
+        # --- Extended Lag Features ---
+        'savoy_height_12h_ago', 'savoy_height_24h_ago',
+        'osage_creek_flow_12h_ago', 'osage_creek_flow_24h_ago',
         
-        # --- 🆕 PHASE 1: Trend Indicators ---
-        'savoy_height_trend_6h',
-        'savoy_height_trend_24h',
-        'osage_creek_flow_trend_6h',
-        'osage_creek_flow_trend_24h',
+        # --- Trend Indicators ---
+        'savoy_height_trend_6h', 'savoy_height_trend_24h',
+        'osage_creek_flow_trend_6h', 'osage_creek_flow_trend_24h',
         
-        # --- Rainfall Data (Original) ---
-        'precip_fayetteville', 
-        'precip_springdale', 
-        'precip_bentonville', 
-        'precip_siloam',
+        # --- Rainfall Data ---
+        'precip_fayetteville', 'precip_springdale', 'precip_bentonville', 'precip_siloam',
         
-        # --- Original Saturation (72-hour) ---
+        # --- Precipitation Windows & Saturation ---
         'precip_fayetteville_saturation',
+        'precip_fayetteville_24h', 'precip_fayetteville_48h', 'precip_fayetteville_168h',
+        'precip_fayetteville_720h', # 🆕 PHASE 2: 30-day soil moisture
         
-        # --- 🆕 PHASE 1: Multiple Precipitation Windows ---
-        'precip_fayetteville_24h',
-        'precip_fayetteville_48h',
-        'precip_fayetteville_168h',
+        # --- 🆕 PHASE 2: NWS QPF Forward Windows ---
+        'qpf_next_6h', 'qpf_next_12h', 'qpf_next_24h',
         
         # --- Soil & Seasonal Logic ---
-        'seasonal_cycle',
-        
-        # --- 🆕 PHASE 1: Hour-of-Day Features ---
-        'hour_sin',
-        'hour_cos'
+        'seasonal_cycle', 'hour_sin', 'hour_cos'
     ]
+
+    # 🆕 PHASE 2: Cascade Inputs Architecture
+    hwy_16_features = base_features.copy()
+    
+    hwy_59_features = base_features + [
+        'hwy_16_flow', 'hwy_16_height',
+        'hwy_16_flow_3h_ago', 'hwy_16_flow_6h_ago', 'hwy_16_flow_12h_ago', 'hwy_16_flow_trend_6h',
+        'hwy_16_height_3h_ago', 'hwy_16_height_6h_ago', 'hwy_16_height_12h_ago', 'hwy_16_height_trend_6h'
+    ]
+    
+    watts_features = hwy_59_features + [
+        'hwy_59_height', 'hwy_59_flow_est',
+        'hwy_59_height_3h_ago', 'hwy_59_height_6h_ago', 'hwy_59_height_trend_6h',
+        'hwy_59_flow_est_3h_ago', 'hwy_59_flow_est_6h_ago', 'hwy_59_flow_est_trend_6h'
+    ]
+    
+    feature_sets = {
+        'hwy_16_flow': hwy_16_features,
+        'hwy_59_flow_est': hwy_59_features,
+        'watts_ok_flow': watts_features
+    }
 
     # 5. Train and Save
     for col, target_name in targets.items():
+        base_target_col = '_'.join(col.split('_')[:-1]) if 'hwy_59' not in col else 'hwy_59_flow_est'
+        if col.startswith('hwy_16'): base_target_col = 'hwy_16_flow'
+        elif col.startswith('hwy_59'): base_target_col = 'hwy_59_flow_est'
+        elif col.startswith('watts'): base_target_col = 'watts_ok_flow'
+            
+        features = feature_sets.get(base_target_col, base_features)
+        
         if target_name in df.columns:
             # Drop rows where either features or the target are NaN
             df_clean = df.dropna(subset=[target_name] + features)
@@ -96,6 +109,13 @@ def train_multi_models():
             X = df_clean[features]
             y = df_clean[target_name]
             
+            # 🆕 PHASE 2: Sample weighting for flood events
+            # If the current flow is high, weight the sample 3x higher so the model learns from floods
+            sample_weights = np.ones(len(y))
+            if base_target_col in df_clean.columns:
+                threshold = df_clean[base_target_col].quantile(0.95) # Top 5% of flow events
+                sample_weights = np.where(df_clean[base_target_col] > threshold, 3.0, 1.0)
+            
             # Transitioned to XGBoost for better handling of non-linear trends and lags
             # n_estimators=500 with learning_rate=0.05 provides better convergence than RF
             model = xgb.XGBRegressor(
@@ -105,7 +125,7 @@ def train_multi_models():
                 random_state=42,
                 objective='reg:squarederror'
             )
-            model.fit(X, y)
+            model.fit(X, y, sample_weight=sample_weights)
             
             # Save the model
             joblib.dump(model, f'model_{col}.pkl')

@@ -64,40 +64,41 @@ def generate_multi_forecast():
     local_tz = pytz.timezone('US/Central')
     local_time = utc_time.astimezone(local_tz)
 
-    features = [
-        'savoy_height',
-        'osage_creek_flow',
-        'hwy_59_height',
-        'savoy_height_3h_ago',
-        'savoy_height_6h_ago',
-        'osage_creek_flow_3h_ago',
-        'osage_creek_flow_6h_ago',
-        # 🆕 PHASE 1: Extended lags
-        'savoy_height_12h_ago',
-        'savoy_height_24h_ago',
-        'osage_creek_flow_12h_ago',
-        'osage_creek_flow_24h_ago',
-        # 🆕 PHASE 1: Trend indicators
-        'savoy_height_trend_6h',
-        'savoy_height_trend_24h',
-        'osage_creek_flow_trend_6h',
-        'osage_creek_flow_trend_24h',
-        # Rainfall
-        'precip_fayetteville',
-        'precip_springdale',
-        'precip_bentonville',
-        'precip_siloam',
+    base_features = [
+        'savoy_height', 'osage_creek_flow',
+        'savoy_height_3h_ago', 'savoy_height_6h_ago',
+        'osage_creek_flow_3h_ago', 'osage_creek_flow_6h_ago',
+        'savoy_height_12h_ago', 'savoy_height_24h_ago',
+        'osage_creek_flow_12h_ago', 'osage_creek_flow_24h_ago',
+        'savoy_height_trend_6h', 'savoy_height_trend_24h',
+        'osage_creek_flow_trend_6h', 'osage_creek_flow_trend_24h',
+        'precip_fayetteville', 'precip_springdale', 'precip_bentonville', 'precip_siloam',
         'precip_fayetteville_saturation',
-        # 🆕 PHASE 1: Multiple precip windows
-        'precip_fayetteville_24h',
-        'precip_fayetteville_48h',
-        'precip_fayetteville_168h',
-        # Seasonal & storage
-        'seasonal_cycle',
-        # 🆕 PHASE 1: Hour-of-day features
-        'hour_sin',
-        'hour_cos'
+        'precip_fayetteville_24h', 'precip_fayetteville_48h', 'precip_fayetteville_168h',
+        'precip_fayetteville_720h', # 🆕 PHASE 2: 30-day soil moisture
+        'qpf_next_6h', 'qpf_next_12h', 'qpf_next_24h', # 🆕 PHASE 2: QPF Forward Windows
+        'seasonal_cycle', 'hour_sin', 'hour_cos'
     ]
+
+    hwy_16_features = base_features.copy()
+
+    hwy_59_features = base_features + [
+        'hwy_16_flow', 'hwy_16_height',
+        'hwy_16_flow_3h_ago', 'hwy_16_flow_6h_ago', 'hwy_16_flow_12h_ago', 'hwy_16_flow_trend_6h',
+        'hwy_16_height_3h_ago', 'hwy_16_height_6h_ago', 'hwy_16_height_12h_ago', 'hwy_16_height_trend_6h'
+    ]
+
+    watts_features = hwy_59_features + [
+        'hwy_59_height', 'hwy_59_flow_est',
+        'hwy_59_height_3h_ago', 'hwy_59_height_6h_ago', 'hwy_59_height_trend_6h',
+        'hwy_59_flow_est_3h_ago', 'hwy_59_flow_est_6h_ago', 'hwy_59_flow_est_trend_6h'
+    ]
+
+    feature_sets = {
+        'hwy_16_flow': hwy_16_features,
+        'hwy_59_flow_est': hwy_59_features,
+        'watts_ok_flow': watts_features
+    }
 
     locations = {
         'hwy_16_flow': ('Hwy 16 (Siloam)', 'CFS'),
@@ -142,8 +143,6 @@ def generate_multi_forecast():
         'watts_ok_flow': (0, 40000)
     }
 
-    feature_row = build_feature_row(current_row.reindex(columns=features).iloc[0], features)
-
     for key, (label, unit) in locations.items():
         if key not in current_row.columns:
             print(f"⚠️  CRITICAL: '{key}' not found in master_training_data.csv columns!")
@@ -170,6 +169,9 @@ def generate_multi_forecast():
             for h in [6, 12, 24]:
                 forecast_results[key][f'projected_{h}h'] = None
             continue
+            
+        target_features = feature_sets.get(key, base_features)
+        feature_row = build_feature_row(current_row.reindex(columns=target_features).iloc[0], target_features)
         
         for h in [6, 12, 24]:
             model_path = f'model_{key}_{h}h.pkl'
@@ -180,7 +182,7 @@ def generate_multi_forecast():
 
             try:
                 model = joblib.load(model_path)
-                input_df = pd.DataFrame([feature_row.values], columns=features)
+                input_df = pd.DataFrame([feature_row.values], columns=target_features)
                 pred = model.predict(input_df)[0]
 
                 forecast_results[key][f'projected_{h}h'] = round(float(pred), 2)
@@ -194,7 +196,9 @@ def generate_multi_forecast():
         'hwy_16_flow': ('Hwy 16 (Siloam)', 'CFS'),
         'hwy_59_flow_est': ('Hwy 59 (AR Bridge)', 'EST. CFS'),
         'lake_francis_height': ('Lake Francis Level', 'ft (MSL)'),
-        'watts_ok_flow': ('Watts Bridge (OK)', 'CFS')
+        'watts_ok_flow': ('Watts Bridge (OK)', 'CFS'),
+        'savoy_height': ('Savoy Upstream', 'ft'),
+        'osage_creek_flow': ('Osage Creek', 'CFS')
     }
 
     for key, (label, unit) in history_keys.items():
