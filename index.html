@@ -1095,7 +1095,6 @@
         updateSettingsUI();
 
         document.getElementById('woka-slider').addEventListener('input', event => setWokaRatio(event.target.value));
-        document.getElementById('chart-mode').addEventListener('change', event => setChartMode(event.target.value));
         document.getElementById('sim-rain-slider').addEventListener('input', updateSimulation);
 
         fetchForecasts();
