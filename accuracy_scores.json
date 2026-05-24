@@ -1,7 +1,7 @@
 {
-  "last_updated": "2026-05-24T21:27:10.015695+00:00",
-  "total_predictions_logged": 186,
-  "total_scored": 49,
+  "last_updated": "2026-05-24T22:29:24.645567+00:00",
+  "total_predictions_logged": 195,
+  "total_scored": 50,
   "min_required": 10,
   "gauges": {
     "hwy_16_flow": {
@@ -282,14 +282,13 @@
       "name": "Watts Bridge (OK)",
       "horizons": {
         "6h": {
-          "mae": 446.39,
-          "mape": 48.95,
+          "mae": 454.31,
+          "mape": 49.93,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 14,
+          "sample_count": 15,
           "recent_trend": "insufficient_data",
           "last_10_errors": [
-            3.98,
             87.12,
             87.12,
             58.24,
@@ -298,7 +297,8 @@
             58.24,
             58.24,
             58.24,
-            58.24
+            58.24,
+            63.68
           ]
         },
         "12h": {
@@ -406,6 +406,12 @@
           "horizon": "6h",
           "predicted": 1443.18,
           "actual": 912.0
+        },
+        {
+          "target_time": "2026-05-24T21:00:00+00:00",
+          "horizon": "6h",
+          "predicted": 1452.68,
+          "actual": 887.5
         }
       ]
     }
