@@ -18,6 +18,64 @@
         .trend-down {
             color: #ef4444;
         }
+
+        /* Accuracy badge styles */
+        .confidence-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .confidence-excellent { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+        .confidence-good { background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); }
+        .confidence-fair { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+        .confidence-poor { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .confidence-na { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+
+        .trend-arrow {
+            display: inline-block;
+            font-size: 0.75rem;
+        }
+        .trend-improving { color: #34d399; }
+        .trend-declining { color: #f87171; }
+        .trend-stable { color: #94a3b8; }
+
+        /* Sparkline canvas */
+        .sparkline-container {
+            position: relative;
+            height: 60px;
+            width: 100%;
+        }
+        .sparkline-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Accuracy panel */
+        .accuracy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .accuracy-gauge-card {
+            background: rgba(15,23,42,0.6);
+            border: 1px solid rgba(51,65,85,0.5);
+            border-radius: 1.25rem;
+            padding: 1.25rem;
+        }
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid rgba(51,65,85,0.3);
+        }
+        .metric-row:last-child { border-bottom: none; }
     </style>
 </head>
 
@@ -178,6 +236,22 @@
             </div>
         </section>
 
+        <!-- Model Accuracy Section -->
+        <section id="accuracy-section" class="mt-8 bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-5">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Prediction Quality</p>
+                    <h2 class="text-2xl font-semibold">Model Accuracy</h2>
+                </div>
+                <div id="accuracy-update" class="text-sm text-slate-400"></div>
+            </div>
+            <div id="accuracy-content">
+                <div class="flex items-center justify-center py-12">
+                    <p class="text-slate-500 text-sm">Loading accuracy data...</p>
+                </div>
+            </div>
+        </section>
+
         <footer class="mt-12 text-center text-slate-500 text-sm">
             <p>Data refreshed hourly via USGS & NWS. AI model updates daily.</p>
         </footer>
@@ -206,6 +280,7 @@
         let latestForecast = null;
         let latestHistory = null;
         let latestSimulations = null;
+        let latestAccuracy = null;
         let activeSimulation = 'none';
 
         function saveSettings() {
@@ -386,6 +461,13 @@
             }
 
             try {
+                const accResp = await fetch('./accuracy_scores.json');
+                if (accResp.ok) latestAccuracy = await accResp.json();
+            } catch (err) {
+                console.warn('Accuracy scores fetch error:', err);
+            }
+
+            try {
                 const simResp = await fetch('./simulations.json');
                 if (simResp.ok) latestSimulations = await simResp.json();
             } catch (err) {
@@ -393,6 +475,7 @@
             }
 
             renderWeather(weatherData);
+            renderAccuracyPanel(latestAccuracy);
 
             if (forecastData) {
                 latestForecast = forecastData;
@@ -430,7 +513,7 @@
                         current: displayData[key].current,
                         projected: displayData[key][`projected_${settings.horizon}h`]
                     };
-                    createCard(container, meta.name, vals, meta.unit, meta.color);
+                    createCard(container, meta.name, vals, meta.unit, meta.color, key);
                     cardsCreated += 1;
                 }
             }
@@ -494,7 +577,37 @@
             container.innerHTML = html;
         }
 
-        function createCard(parent, title, vals, unit, accentColor = '#3b82f6') {
+        function getConfidenceBadge(gaugeKey) {
+            if (!latestAccuracy || !latestAccuracy.gauges || !latestAccuracy.gauges[gaugeKey]) {
+                return '';
+            }
+            const gauge = latestAccuracy.gauges[gaugeKey];
+            const score = gauge.overall_confidence;
+            const label = gauge.overall_label;
+
+            if (score === null || score === undefined) {
+                return `<span class="confidence-badge confidence-na" title="Collecting data — accuracy scoring starts after ~48h of predictions">⏳ Collecting</span>`;
+            }
+
+            let cssClass = 'confidence-na';
+            if (score >= 85) cssClass = 'confidence-excellent';
+            else if (score >= 70) cssClass = 'confidence-good';
+            else if (score >= 50) cssClass = 'confidence-fair';
+            else cssClass = 'confidence-poor';
+
+            // Trend arrow
+            let trendHtml = '';
+            const h6 = gauge.horizons?.['6h'];
+            if (h6 && h6.recent_trend && h6.recent_trend !== 'insufficient_data') {
+                const trendMap = { improving: ['↑','trend-improving'], stable: ['→','trend-stable'], declining: ['↓','trend-declining'] };
+                const [arrow, cls] = trendMap[h6.recent_trend] || ['',''];
+                trendHtml = ` <span class="trend-arrow ${cls}">${arrow}</span>`;
+            }
+
+            return `<span class="confidence-badge ${cssClass}" title="Model confidence: ${score}/100 (${label})">${score} ${label}${trendHtml}</span>`;
+        }
+
+        function createCard(parent, title, vals, unit, accentColor = '#3b82f6', gaugeKey = null) {
             const precision = unit.includes('ft') ? 2 : 1;
             const hasCurrent = vals.current !== null && vals.current !== undefined;
             const hasProjected = vals.projected !== null && vals.projected !== undefined;
@@ -504,13 +617,18 @@
             const trendClass = hasCurrent && hasProjected ? (diff >= 0 ? 'trend-up' : 'trend-down') : 'text-slate-500';
             const trendIcon = hasCurrent && hasProjected ? (diff >= 0 ? '▲' : '▼') : '';
 
+            const badge = gaugeKey ? getConfidenceBadge(gaugeKey) : '';
+
             const card = document.createElement('div');
             card.className = 'river-card bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700';
             card.style.borderLeftColor = accentColor;
             card.innerHTML = `
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-[0.18em] mb-3">${title}</h3>
+                        <div class="flex items-center gap-2 mb-3">
+                            <h3 class="text-slate-400 text-sm font-semibold uppercase tracking-[0.18em]">${title}</h3>
+                            ${badge}
+                        </div>
                         <p class="text-4xl font-semibold font-mono">${currentText} <span class="text-sm font-normal text-slate-500">${unit}</span></p>
                         <p class="text-xs text-slate-500 mt-2">Current reading</p>
                     </div>
@@ -665,6 +783,189 @@
             }
             chartInstance = new Chart(canvas, config);
             updateNode.innerText = data.timestamp || '';
+        }
+
+        // ─── Accuracy Panel Rendering ───────────────────────
+
+        function renderAccuracyPanel(data) {
+            const container = document.getElementById('accuracy-content');
+            const updateEl = document.getElementById('accuracy-update');
+
+            if (!data || !data.gauges) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-center">
+                        <svg class="w-12 h-12 text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <p class="text-slate-500 text-sm">Accuracy tracking is active but hasn't collected enough data yet.</p>
+                        <p class="text-slate-600 text-xs mt-1">Scores will appear after ~48 hours of pipeline runs.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (data.last_updated) {
+                const dt = new Date(data.last_updated);
+                updateEl.innerText = `${data.total_scored} predictions scored`;
+            }
+
+            let html = '<div class="accuracy-grid">';
+
+            for (const [key, gauge] of Object.entries(data.gauges)) {
+                const meta = GAUGE_MAP[key];
+                if (!meta) continue;
+
+                const overallScore = gauge.overall_confidence;
+                const overallLabel = gauge.overall_label;
+                let overallClass = 'confidence-na';
+                if (overallScore >= 85) overallClass = 'confidence-excellent';
+                else if (overallScore >= 70) overallClass = 'confidence-good';
+                else if (overallScore >= 50) overallClass = 'confidence-fair';
+                else if (overallScore !== null && overallScore !== undefined) overallClass = 'confidence-poor';
+
+                html += `
+                    <div class="accuracy-gauge-card">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full" style="background:${meta.color}"></span>
+                                <h3 class="text-sm font-semibold text-slate-200">${meta.name}</h3>
+                            </div>
+                            ${overallScore != null
+                                ? `<span class="confidence-badge ${overallClass}">${overallScore} ${overallLabel}</span>`
+                                : `<span class="confidence-badge confidence-na">⏳ Collecting</span>`
+                            }
+                        </div>
+                `;
+
+                // Horizon rows
+                for (const h of ['6h', '12h', '24h']) {
+                    const hData = gauge.horizons?.[h];
+                    if (!hData) continue;
+
+                    let scoreHtml, maeHtml, trendHtml;
+
+                    if (hData.confidence_score != null) {
+                        let hClass = 'confidence-na';
+                        if (hData.confidence_score >= 85) hClass = 'confidence-excellent';
+                        else if (hData.confidence_score >= 70) hClass = 'confidence-good';
+                        else if (hData.confidence_score >= 50) hClass = 'confidence-fair';
+                        else hClass = 'confidence-poor';
+
+                        scoreHtml = `<span class="confidence-badge ${hClass}" style="font-size:0.6rem">${hData.confidence_score}</span>`;
+                        maeHtml = `<span class="text-xs text-slate-400">MAE: ${hData.mae?.toFixed(1) ?? '—'} · MAPE: ${hData.mape?.toFixed(1) ?? '—'}%</span>`;
+
+                        const trendMap = { improving: ['↑ Better','trend-improving'], stable: ['→ Steady','trend-stable'], declining: ['↓ Worse','trend-declining'] };
+                        const [tLabel, tCls] = trendMap[hData.recent_trend] || ['—',''];
+                        trendHtml = `<span class="trend-arrow ${tCls}" style="font-size:0.65rem">${tLabel}</span>`;
+                    } else {
+                        scoreHtml = `<span class="text-xs text-slate-600">—</span>`;
+                        maeHtml = `<span class="text-xs text-slate-600">${hData.sample_count} / 10 samples</span>`;
+                        trendHtml = '';
+                    }
+
+                    html += `
+                        <div class="metric-row">
+                            <span class="text-xs font-semibold text-slate-400 w-8">${h}</span>
+                            ${scoreHtml}
+                            ${maeHtml}
+                            ${trendHtml}
+                        </div>
+                    `;
+                }
+
+                // Prediction vs Actual sparkline
+                const canvasId = `sparkline-${key}`;
+                html += `
+                    <div class="sparkline-container mt-3">
+                        <canvas id="${canvasId}"></canvas>
+                    </div>
+                </div>
+                `;
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+
+            // Render sparkline charts after DOM update
+            requestAnimationFrame(() => renderSparklines(data));
+        }
+
+        function renderSparklines(data) {
+            if (!data || !data.gauges) return;
+
+            for (const [key, gauge] of Object.entries(data.gauges)) {
+                const canvasId = `sparkline-${key}`;
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) continue;
+
+                const predictions = gauge.recent_predictions || [];
+                // Filter to only scored entries with both predicted and actual
+                const scored = predictions.filter(p => p.predicted != null && p.actual != null);
+
+                if (scored.length < 2) {
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#475569';
+                    ctx.font = '11px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Not enough scored predictions yet', canvas.width / 2, canvas.height / 2);
+                    continue;
+                }
+
+                const meta = GAUGE_MAP[key];
+                const labels = scored.map((_, i) => i + 1);
+                const predictedData = scored.map(p => p.predicted);
+                const actualData = scored.map(p => p.actual);
+
+                new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Predicted',
+                                data: predictedData,
+                                borderColor: meta?.color || '#60a5fa',
+                                backgroundColor: 'transparent',
+                                borderWidth: 2,
+                                pointRadius: 2,
+                                pointBackgroundColor: meta?.color || '#60a5fa',
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Actual',
+                                data: actualData,
+                                borderColor: '#94a3b8',
+                                backgroundColor: 'transparent',
+                                borderWidth: 2,
+                                borderDash: [4, 3],
+                                pointRadius: 2,
+                                pointBackgroundColor: '#94a3b8',
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 20, padding: 8 }
+                            },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        scales: {
+                            x: { display: false },
+                            y: {
+                                display: true,
+                                grid: { color: 'rgba(148,163,184,0.08)' },
+                                ticks: { color: '#64748b', font: { size: 9 }, maxTicksLimit: 3 }
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         loadSettings();

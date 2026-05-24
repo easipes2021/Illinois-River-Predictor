@@ -5,6 +5,7 @@ import xgboost as xgb
 from datetime import timedelta
 import pytz
 import json
+from accuracy_tracker import run_full_accuracy_pipeline
 
 
 def safe_float(value, fallback=None):
@@ -242,6 +243,12 @@ def generate_multi_forecast():
 
     print("✅ Dashboard Data Packaged (including Historical Comparison).")
     print(f"Data status: {df.isnull().sum().sum()} missing values found.")
+
+    # 🆕 Run accuracy tracking pipeline
+    try:
+        run_full_accuracy_pipeline(forecast_results)
+    except Exception as e:
+        print(f"⚠️ Accuracy tracking failed (non-fatal): {e}")
 
 
 if __name__ == '__main__':
