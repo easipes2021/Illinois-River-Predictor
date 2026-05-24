@@ -610,23 +610,126 @@
                 return;
             }
 
-            const mmToInches = (mm) => (mm / 25.4).toFixed(2);
+            const mmToInches = (mm) => {
+                if (mm === undefined || mm === null || isNaN(mm)) return '0.00';
+                return (mm / 25.4).toFixed(2);
+            };
 
-            let html = `
-                <div class="mb-4 pb-4 border-b border-slate-700">
-                    <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Ground Saturation</p>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-slate-300">Fayetteville Index:</span>
-                        <span class="font-mono text-sky-400 font-semibold">${mmToInches(data.saturation.fayetteville)} in</span>
+            const formatVal = (mm) => {
+                if (mm === undefined || mm === null || isNaN(mm)) return '0.00"';
+                const inches = (mm / 25.4).toFixed(2);
+                return `<span class="font-mono text-sky-400 font-semibold">${inches}"</span> <span class="text-[10px] text-slate-500 font-mono">(${mm.toFixed(1)}mm)</span>`;
+            };
+
+            let html = '';
+
+            // If we have the detailed model_precip fields, display them
+            if (data.model_precip) {
+                const mp = data.model_precip;
+                html += `
+                    <!-- Model Precipitation Inputs -->
+                    <div class="mb-4 pb-4 border-b border-slate-700 space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Current Rain (Last Hour)</p>
+                                <span class="inline-flex items-center rounded-full bg-slate-900 px-2 py-0.5 text-[10px] text-sky-400 border border-slate-700 font-mono">Live Inputs</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 bg-slate-900/40 p-3 rounded-2xl border border-slate-700/50">
+                                <div>
+                                    <div class="text-[11px] text-slate-400">Fayetteville</div>
+                                    <div class="text-sm">${formatVal(mp.precip_fayetteville)}</div>
+                                </div>
+                                <div>
+                                    <div class="text-[11px] text-slate-400">Springdale</div>
+                                    <div class="text-sm">${formatVal(mp.precip_springdale)}</div>
+                                </div>
+                                <div>
+                                    <div class="text-[11px] text-slate-400">Bentonville</div>
+                                    <div class="text-sm">${formatVal(mp.precip_bentonville)}</div>
+                                </div>
+                                <div>
+                                    <div class="text-[11px] text-slate-400">Siloam Springs</div>
+                                    <div class="text-sm">${formatVal(mp.precip_siloam)}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Soil Moisture & Saturation</p>
+                                <span class="inline-flex items-center rounded-full bg-slate-900 px-2 py-0.5 text-[10px] text-emerald-400 border border-slate-700 font-mono">Fay. Station</span>
+                            </div>
+                            <div class="space-y-1.5 bg-slate-900/40 p-3 rounded-2xl border border-slate-700/50">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-300">24-Hour Total:</span>
+                                    <span class="text-sm">${formatVal(mp.precip_fayetteville_24h)}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-300">48-Hour Total:</span>
+                                    <span class="text-sm">${formatVal(mp.precip_fayetteville_48h)}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-300">72-Hour Saturation:</span>
+                                    <span class="text-sm font-semibold">${formatVal(mp.precip_fayetteville_saturation)}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-300">7-Day Cumulative:</span>
+                                    <span class="text-sm">${formatVal(mp.precip_fayetteville_168h)}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-300">30-Day Soil Moisture:</span>
+                                    <span class="text-sm">${formatVal(mp.precip_fayetteville_720h)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Model Forecast Inputs (QPF)</p>
+                                <span class="inline-flex items-center rounded-full bg-slate-900 px-2 py-0.5 text-[10px] text-amber-400 border border-slate-700 font-mono">NWS API</span>
+                            </div>
+                            <div class="space-y-1.5 bg-slate-900/40 p-3 rounded-2xl border border-slate-700/50">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-300">6-Hour QPF Forward:</span>
+                                    <span class="text-sm">${formatVal(mp.qpf_next_6h)}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-300">12-Hour QPF Forward:</span>
+                                    <span class="text-sm">${formatVal(mp.qpf_next_12h)}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-300">24-Hour QPF Forward:</span>
+                                    <span class="text-sm">${formatVal(mp.qpf_next_24h)}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex justify-between items-center mt-1">
-                        <span class="text-sm text-slate-300">Past 24h Rain:</span>
-                        <span class="font-mono text-sky-400 font-semibold">${mmToInches(data.saturation.recent_24h)} in</span>
+                `;
+            } else {
+                // Fallback to old format
+                html += `
+                    <div class="mb-4 pb-4 border-b border-slate-700">
+                        <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Ground Saturation</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-slate-300">Fayetteville Index:</span>
+                            <span class="font-mono text-sky-400 font-semibold">${mmToInches(data.saturation.fayetteville)} in</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-1">
+                            <span class="text-sm text-slate-300">Past 24h Rain:</span>
+                            <span class="font-mono text-sky-400 font-semibold">${mmToInches(data.saturation.recent_24h)} in</span>
+                        </div>
                     </div>
-                </div>
+                `;
+            }
+
+            // Forecast section
+            html += `
                 <div>
-                    <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Upcoming Forecast</p>
-                    <div class="space-y-2">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Upcoming Forecast</p>
+                        <span class="text-[10px] text-slate-500">Updated: ${data.timestamp || 'N/A'}</span>
+                    </div>
+                    <div class="space-y-2 bg-slate-900/20 p-3 rounded-2xl border border-slate-700/30">
             `;
 
             if (data.forecast && data.forecast.length > 0) {
@@ -636,7 +739,7 @@
                     html += `
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-slate-300">${timeStr}</span>
-                            <span class="font-mono text-sky-400">${mmToInches(item.precip_mm)} in</span>
+                            <span class="font-mono text-sky-400 font-medium">${mmToInches(item.precip_mm)} in</span>
                         </div>
                     `;
                 });

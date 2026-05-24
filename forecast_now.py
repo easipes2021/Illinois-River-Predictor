@@ -211,6 +211,22 @@ def generate_multi_forecast():
             'fayetteville': safe_float(current_row['precip_fayetteville_saturation'].iloc[0]) if 'precip_fayetteville_saturation' in current_row.columns else 0,
             'recent_24h': safe_float(current_row['precip_fayetteville_24h'].iloc[0]) if 'precip_fayetteville_24h' in current_row.columns else 0
         },
+        'model_precip': {
+            'precip_fayetteville': safe_float(current_row['precip_fayetteville'].iloc[0]) if 'precip_fayetteville' in current_row.columns else 0,
+            'precip_springdale': safe_float(current_row['precip_springdale'].iloc[0]) if 'precip_springdale' in current_row.columns else 0,
+            'precip_bentonville': safe_float(current_row['precip_bentonville'].iloc[0]) if 'precip_bentonville' in current_row.columns else 0,
+            'precip_siloam': safe_float(current_row['precip_siloam'].iloc[0]) if 'precip_siloam' in current_row.columns else 0,
+            
+            'precip_fayetteville_24h': safe_float(current_row['precip_fayetteville_24h'].iloc[0]) if 'precip_fayetteville_24h' in current_row.columns else 0,
+            'precip_fayetteville_48h': safe_float(current_row['precip_fayetteville_48h'].iloc[0]) if 'precip_fayetteville_48h' in current_row.columns else 0,
+            'precip_fayetteville_saturation': safe_float(current_row['precip_fayetteville_saturation'].iloc[0]) if 'precip_fayetteville_saturation' in current_row.columns else 0,
+            'precip_fayetteville_168h': safe_float(current_row['precip_fayetteville_168h'].iloc[0]) if 'precip_fayetteville_168h' in current_row.columns else 0,
+            'precip_fayetteville_720h': safe_float(current_row['precip_fayetteville_720h'].iloc[0]) if 'precip_fayetteville_720h' in current_row.columns else 0,
+            
+            'qpf_next_6h': safe_float(current_row['qpf_next_6h'].iloc[0]) if 'qpf_next_6h' in current_row.columns else 0,
+            'qpf_next_12h': safe_float(current_row['qpf_next_12h'].iloc[0]) if 'qpf_next_12h' in current_row.columns else 0,
+            'qpf_next_24h': safe_float(current_row['qpf_next_24h'].iloc[0]) if 'qpf_next_24h' in current_row.columns else 0
+        },
         'forecast': []
     }
 
