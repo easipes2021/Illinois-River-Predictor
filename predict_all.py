@@ -117,11 +117,16 @@ def train_multi_models():
                 sample_weights = np.where(df_clean[base_target_col] > threshold, 3.0, 1.0)
             
             # Transitioned to XGBoost for better handling of non-linear trends and lags
-            # n_estimators=500 with learning_rate=0.05 provides better convergence than RF
+            # Configured with regularization (max_depth=3, reg_alpha=1.0, reg_lambda=10.0, etc.)
+            # to prevent long-term trailing rainfall features from dominating predictions.
             model = xgb.XGBRegressor(
-                n_estimators=500,
-                learning_rate=0.05,
-                max_depth=5,
+                n_estimators=300,
+                learning_rate=0.03,
+                max_depth=3,
+                subsample=0.8,
+                colsample_bytree=0.7,
+                reg_alpha=1.0,
+                reg_lambda=10.0,
                 random_state=42,
                 objective='reg:squarederror'
             )
