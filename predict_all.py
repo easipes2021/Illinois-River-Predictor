@@ -54,6 +54,12 @@ def train_multi_models():
         # --- Rainfall Data ---
         'precip_fayetteville', 'precip_springdale', 'precip_bentonville', 'precip_siloam',
         
+        # --- 🆕 Time-Lagged Rainfall Features (Routing) ---
+        'precip_fayetteville_3h_ago', 'precip_fayetteville_6h_ago', 'precip_fayetteville_12h_ago',
+        'precip_springdale_3h_ago', 'precip_springdale_6h_ago', 'precip_springdale_12h_ago',
+        'precip_bentonville_3h_ago', 'precip_bentonville_6h_ago', 'precip_bentonville_12h_ago',
+        'precip_siloam_3h_ago', 'precip_siloam_6h_ago', 'precip_siloam_12h_ago',
+        
         # --- Precipitation Windows & Saturation ---
         'precip_fayetteville_saturation',
         'precip_fayetteville_24h', 'precip_fayetteville_48h', 'precip_fayetteville_168h',

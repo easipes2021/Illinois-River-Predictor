@@ -73,6 +73,10 @@ def generate_multi_forecast():
         'savoy_height_trend_6h', 'savoy_height_trend_24h',
         'osage_creek_flow_trend_6h', 'osage_creek_flow_trend_24h',
         'precip_fayetteville', 'precip_springdale', 'precip_bentonville', 'precip_siloam',
+        'precip_fayetteville_3h_ago', 'precip_fayetteville_6h_ago', 'precip_fayetteville_12h_ago',
+        'precip_springdale_3h_ago', 'precip_springdale_6h_ago', 'precip_springdale_12h_ago',
+        'precip_bentonville_3h_ago', 'precip_bentonville_6h_ago', 'precip_bentonville_12h_ago',
+        'precip_siloam_3h_ago', 'precip_siloam_6h_ago', 'precip_siloam_12h_ago',
         'precip_fayetteville_saturation',
         'precip_fayetteville_24h', 'precip_fayetteville_48h', 'precip_fayetteville_168h',
         'precip_fayetteville_720h', # 🆕 PHASE 2: 30-day soil moisture

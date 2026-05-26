@@ -98,6 +98,10 @@ def merge_datasets():
         master_df[f'{col}_168h'] = master_df[col].rolling(window=168, min_periods=1).sum()
         # 🆕 PHASE 2 (E): 30-day soil moisture index
         master_df[f'{col}_720h'] = master_df[col].rolling(window=720, min_periods=1).sum()
+        # 🆕 Time-lagged precipitation features (Routing)
+        master_df[f'{col}_3h_ago'] = master_df[col].shift(3)
+        master_df[f'{col}_6h_ago'] = master_df[col].shift(6)
+        master_df[f'{col}_12h_ago'] = master_df[col].shift(12)
 
     upstream_cols = ['savoy_height', 'osage_creek_flow']
     for col in upstream_cols:

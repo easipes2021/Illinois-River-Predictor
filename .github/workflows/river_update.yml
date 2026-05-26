@@ -46,8 +46,18 @@ jobs:
           python merge_data.py
           echo "merge_data.py completed"
           ls -la *.csv
-          # python predict_all.py  # SKIPPED: Models are pre-trained
-          # echo "predict_all.py completed"
+          
+          # Only retrain models once a day at 06:00 UTC (12:00 AM Central Time) or on manual triggers
+          CURRENT_HOUR=$(date -u +%H)
+          CURRENT_MIN=$(date -u +%M)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || ([ "$CURRENT_HOUR" = "06" ] && [ "$CURRENT_MIN" -lt 30 ]); then
+            echo "🔄 Running daily model retraining..."
+            python predict_all.py
+            git add *.pkl
+          else
+            echo "⏳ Skipping model retraining (scheduled daily at 06:00 UTC)"
+          fi
+
           python forecast_now.py
           echo "forecast_now.py completed"
           ls -la forecasts.json history.json weather.json
@@ -61,6 +71,7 @@ jobs:
           git config --global user.name 'Illinois-River-Bot'
           git config --global user.email 'bot@illinoisriver.ai'
           git add forecasts.json history.json weather.json prediction_log.json accuracy_scores.json simulations.json
+          git add *.pkl 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "Automated River Update: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             git fetch origin main
