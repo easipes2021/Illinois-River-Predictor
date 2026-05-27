@@ -5,7 +5,7 @@ import xgboost as xgb
 from datetime import timedelta
 import pytz
 import json
-from accuracy_tracker import run_full_accuracy_pipeline
+from beta_accuracy_tracker import run_full_beta_accuracy_pipeline
 
 
 def safe_float(value, fallback=None):
@@ -192,6 +192,12 @@ def generate_multi_forecast():
         json.dump(forecast_results, f, indent=4)
 
     print("✅ Beta Forecast Data Packaged.")
+    
+    # Run the beta accuracy tracker
+    try:
+        run_full_beta_accuracy_pipeline(forecast_results)
+    except Exception as e:
+        print(f"⚠️ Accuracy tracking failed (non-fatal): {e}")
 
 
 if __name__ == '__main__':

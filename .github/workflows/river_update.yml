@@ -82,7 +82,7 @@ jobs:
           git config --global user.name 'Illinois-River-Bot'
           git config --global user.email 'bot@illinoisriver.ai'
           git add -f huc12_training_data_beta.csv master_training_data_beta.csv
-          git add forecasts.json history.json weather.json prediction_log.json accuracy_scores.json simulations.json watershed_rainfall.json forecasts_beta.json
+          git add forecasts.json history.json weather.json prediction_log.json accuracy_scores.json simulations.json watershed_rainfall.json forecasts_beta.json prediction_log_beta.json accuracy_scores_beta.json
           git add *.pkl 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "Automated River Update: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"

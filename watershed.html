@@ -145,11 +145,11 @@
 
         async function init() {
             try {
-                // Fetch Data
-                const [geoRes, rainRes, betaRes] = await Promise.all([
+                const [geoRes, rainRes, betaRes, accRes] = await Promise.all([
                     fetch('upper_illinois_huc12.geojson'),
                     fetch('watershed_rainfall.json'),
-                    fetch('forecasts_beta.json').catch(() => null)
+                    fetch('forecasts_beta.json').catch(() => null),
+                    fetch('accuracy_scores_beta.json').catch(() => null)
                 ]);
                 
                 const geojson = await geoRes.json();
@@ -202,6 +202,11 @@
                 // Build Beta Predictions
                 if (betaRes && betaRes.ok) {
                     const betaData = await betaRes.json();
+                    let accData = null;
+                    if (accRes && accRes.ok) {
+                        accData = await accRes.json();
+                    }
+                    
                     const grid = document.getElementById('beta-predictions-grid');
                     grid.innerHTML = '';
                     
@@ -210,6 +215,19 @@
                         {id: 'hwy_59_flow_est', name: 'Hwy 59 (AR Border)', unit: 'CFS'},
                         {id: 'watts_ok_flow', name: 'Watts Bridge (OK)', unit: 'CFS'}
                     ];
+                    
+                    const getAccBadge = (gaugeId, horizon) => {
+                        if (!accData || !accData.gauges[gaugeId]) return `<span class="px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded text-[10px]">TBD</span>`;
+                        const hData = accData.gauges[gaugeId].horizons[horizon];
+                        if (!hData || !hData.confidence_score) return `<span class="px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded text-[10px]">TBD</span>`;
+                        
+                        let colorClass = 'bg-rose-500/20 text-rose-400';
+                        if (hData.confidence_score >= 85) colorClass = 'bg-emerald-500/20 text-emerald-400';
+                        else if (hData.confidence_score >= 70) colorClass = 'bg-amber-500/20 text-amber-400';
+                        else if (hData.confidence_score >= 50) colorClass = 'bg-orange-500/20 text-orange-400';
+                        
+                        return `<span class="px-1.5 py-0.5 ${colorClass} rounded text-[10px]" title="MAPE: ${hData.mape}%">${hData.confidence_score}/100</span>`;
+                    };
                     
                     keys.forEach(k => {
                         const bData = betaData[k.id];
@@ -224,9 +242,27 @@
                                     <h3 class="font-bold text-slate-200 mb-2">${k.name}</h3>
                                     <div class="text-sm text-slate-400 mb-3">Current: <span class="text-white font-mono">${cur} ${k.unit}</span></div>
                                     <div class="space-y-1">
-                                        <div class="flex justify-between text-xs"><span class="text-slate-500">6h Forecast:</span> <span class="font-mono text-sky-400">${f6}</span></div>
-                                        <div class="flex justify-between text-xs"><span class="text-slate-500">12h Forecast:</span> <span class="font-mono text-sky-400">${f12}</span></div>
-                                        <div class="flex justify-between text-xs"><span class="text-slate-500">24h Forecast:</span> <span class="font-mono text-sky-400">${f24}</span></div>
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="text-slate-500">6h Forecast:</span> 
+                                            <div class="flex items-center gap-2">
+                                                ${getAccBadge(k.id, '6h')}
+                                                <span class="font-mono text-sky-400 w-16 text-right">${f6}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="text-slate-500">12h Forecast:</span> 
+                                            <div class="flex items-center gap-2">
+                                                ${getAccBadge(k.id, '12h')}
+                                                <span class="font-mono text-sky-400 w-16 text-right">${f12}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between items-center text-xs">
+                                            <span class="text-slate-500">24h Forecast:</span> 
+                                            <div class="flex items-center gap-2">
+                                                ${getAccBadge(k.id, '24h')}
+                                                <span class="font-mono text-sky-400 w-16 text-right">${f24}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             `;
