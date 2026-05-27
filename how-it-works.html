@@ -5,7 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>How It Works | Illinois River Predictor</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.4.0/dist/mermaid.min.js"></script>
+    <style>
+        .city-label {
+            background: none;
+            border: none;
+            box-shadow: none;
+            color: white;
+            font-weight: 600;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            font-size: 11px;
+        }
+    </style>
 </head>
 <body class="bg-slate-900 text-slate-300 font-sans min-h-screen">
     <div class="max-w-4xl mx-auto p-6 sm:p-10">
@@ -34,9 +47,9 @@
                         To accurately predict the river, we cannot just look at the river itself. We have to divide the entire Northwest Arkansas region into 26 distinct <strong>"HUC-12" sub-watersheds</strong> and measure the exact rainfall inside each one of them.
                     </p>
                 </div>
-                <div class="bg-slate-800 p-2 rounded-2xl border border-slate-700 shadow-2xl">
-                    <img src="watershed_illustration.png" alt="Stylized Watershed Map" class="rounded-xl w-full h-auto">
-                    <p class="text-center text-xs text-slate-500 mt-2 pb-1">A stylized view of tributary networks funneling into a main river stem.</p>
+                <div class="bg-slate-800 p-2 rounded-2xl border border-slate-700 shadow-2xl relative">
+                    <div id="how-map" class="rounded-xl w-full" style="height: 380px; z-index: 1;"></div>
+                    <p class="text-center text-xs text-slate-500 mt-2 pb-1">Real-time view of the HUC-12 routing zones and river networks.</p>
                 </div>
             </div>
         </section>
@@ -142,6 +155,89 @@
             theme: 'dark',
             fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
         });
+
+        // Initialize Map
+        async function initMap() {
+            const map = L.map('how-map', { scrollWheelZoom: false });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; CARTO',
+                subdomains: 'abcd',
+                maxZoom: 14
+            }).addTo(map);
+
+            try {
+                const [geoRes, streamRes] = await Promise.all([
+                    fetch('upper_illinois_huc12.geojson'),
+                    fetch('streams.geojson').catch(() => null)
+                ]);
+                
+                const geojson = await geoRes.json();
+                
+                // Add Watershed Polygons
+                const geoLayer = L.geoJSON(geojson, {
+                    style: {
+                        fillColor: '#3b82f6',
+                        fillOpacity: 0.05,
+                        weight: 1,
+                        color: '#555',
+                        opacity: 0.8
+                    }
+                }).addTo(map);
+
+                // Add Streams
+                if (streamRes && streamRes.ok) {
+                    const streamGeoJson = await streamRes.json();
+                    L.geoJSON(streamGeoJson, {
+                        style: function(feature) {
+                            const isMain = feature.properties.is_main;
+                            return {
+                                color: isMain ? '#38bdf8' : '#60a5fa',
+                                weight: isMain ? 4 : 1.5,
+                                opacity: isMain ? 0.9 : 0.4,
+                                dashArray: isMain ? '' : '3, 4'
+                            };
+                        },
+                        interactive: false
+                    }).addTo(map);
+                }
+
+                // Add City Labels
+                const cities = [
+                    { name: 'Fayetteville', coords: [36.0822, -94.1719] },
+                    { name: 'Springdale', coords: [36.1867, -94.1288] },
+                    { name: 'Rogers', coords: [36.3320, -94.1185] },
+                    { name: 'Bentonville', coords: [36.3729, -94.2088] },
+                    { name: 'Siloam Springs', coords: [36.1881, -94.5404] },
+                    { name: 'Watts (OK)', coords: [36.1086, -94.5713] }
+                ];
+
+                cities.forEach(city => {
+                    L.circleMarker(city.coords, {
+                        radius: 4,
+                        fillColor: '#fbbf24',
+                        color: '#fff',
+                        weight: 1,
+                        fillOpacity: 1
+                    }).addTo(map);
+                    
+                    L.tooltip({
+                        permanent: true,
+                        direction: 'right',
+                        className: 'city-label',
+                        offset: [5, 0]
+                    })
+                    .setContent(city.name)
+                    .setLatLng(city.coords)
+                    .addTo(map);
+                });
+
+                map.fitBounds(geoLayer.getBounds(), { padding: [20, 20] });
+            } catch (e) {
+                console.error('Failed to load map data', e);
+            }
+        }
+        
+        initMap();
     </script>
 </body>
 </html>
