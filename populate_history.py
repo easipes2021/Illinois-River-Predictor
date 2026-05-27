@@ -25,8 +25,8 @@ def fetch_historical_gauge(site_id, param_code, days=30):
         # 🆕 Use get_iv instead of get_record for instantaneous values (faster, more reliable)
         df, meta = nwis.get_iv(
             sites=site_id, 
-            start=start_date, 
-            end=end_date,
+            start=start_date.strftime("%Y-%m-%d"), 
+            end=end_date.strftime("%Y-%m-%d"),
             parameterCd=param_code
         )
         
