@@ -86,6 +86,7 @@
     <script>
         let map;
         let geoLayer;
+        let streamLayer;
         let rainfallData = {};
         let activeMetric = 'qpe_24hr';
 
@@ -145,15 +146,21 @@
 
         async function init() {
             try {
-                const [geoRes, rainRes, betaRes, accRes] = await Promise.all([
+                const [geoRes, rainRes, betaRes, accRes, streamRes] = await Promise.all([
                     fetch('upper_illinois_huc12.geojson'),
                     fetch('watershed_rainfall.json'),
                     fetch('forecasts_beta.json').catch(() => null),
-                    fetch('accuracy_scores_beta.json').catch(() => null)
+                    fetch('accuracy_scores_beta.json').catch(() => null),
+                    fetch('streams.geojson').catch(() => null)
                 ]);
                 
                 const geojson = await geoRes.json();
                 rainfallData = await rainRes.json();
+                
+                let streamGeoJson = null;
+                if (streamRes && streamRes.ok) {
+                    streamGeoJson = await streamRes.json();
+                }
 
                 // Build Map
                 map = L.map('watershed-map', { scrollWheelZoom: false });
@@ -167,6 +174,21 @@
                     style: styleFeature,
                     onEachFeature: onEachFeature
                 }).addTo(map);
+                
+                if (streamGeoJson) {
+                    streamLayer = L.geoJSON(streamGeoJson, {
+                        style: function(feature) {
+                            const isMain = feature.properties.is_main;
+                            return {
+                                color: isMain ? '#38bdf8' : '#60a5fa', // Sky blue for main, lighter blue for tributaries
+                                weight: isMain ? 4 : 1.5,
+                                opacity: isMain ? 0.9 : 0.4,
+                                dashArray: isMain ? '' : '3, 4'
+                            };
+                        },
+                        interactive: false // Don't block clicks to the watersheds below
+                    }).addTo(map);
+                }
                 
                 map.fitBounds(geoLayer.getBounds(), { padding: [20, 20] });
 
