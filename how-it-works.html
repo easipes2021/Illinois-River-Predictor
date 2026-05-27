@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How It Works | Illinois River Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.4.0/dist/mermaid.min.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-300 font-sans min-h-screen">
+    <div class="max-w-4xl mx-auto p-6 sm:p-10">
+        <!-- Header -->
+        <header class="mb-12 border-b border-slate-700 pb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-4xl font-bold text-white mb-2">How It Works</h1>
+                <p class="text-slate-400 text-lg">Understanding the physics of the Illinois River and the AI that predicts it.</p>
+            </div>
+            <a href="index.html" class="text-sky-400 hover:text-sky-300 transition-colors font-medium">&larr; Back to Dashboard</a>
+        </header>
+
+        <!-- Section 1: The Watershed -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-semibold text-white mb-6 border-l-4 border-sky-500 pl-4">1. What is a Watershed?</h2>
+            
+            <div class="grid gap-8 md:grid-cols-2 items-center mb-6">
+                <div>
+                    <p class="mb-4 leading-relaxed">
+                        A <strong>watershed</strong> is an area of land that channels all rainfall and snowmelt to a single outflow point. The Illinois River begins south of Fayetteville, Arkansas, and flows north, then west into Oklahoma. 
+                    </p>
+                    <p class="mb-4 leading-relaxed">
+                        This means that every drop of rain that falls on Springdale, Rogers, Bentonville, and Siloam Springs eventually makes its way into the Illinois River. If a massive thunderstorm hits Rogers, the river at Watts Bridge (OK) will flood a day later, even if it hasn't rained a single drop in Oklahoma.
+                    </p>
+                    <p class="leading-relaxed">
+                        To accurately predict the river, we cannot just look at the river itself. We have to divide the entire Northwest Arkansas region into 26 distinct <strong>"HUC-12" sub-watersheds</strong> and measure the exact rainfall inside each one of them.
+                    </p>
+                </div>
+                <div class="bg-slate-800 p-2 rounded-2xl border border-slate-700 shadow-2xl">
+                    <img src="watershed_illustration.png" alt="Stylized Watershed Map" class="rounded-xl w-full h-auto">
+                    <p class="text-center text-xs text-slate-500 mt-2 pb-1">A stylized view of tributary networks funneling into a main river stem.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Hydrologic Routing -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-semibold text-white mb-6 border-l-4 border-emerald-500 pl-4">2. Hydrologic Routing & Time Lags</h2>
+            <p class="mb-6 leading-relaxed text-lg">
+                Water does not teleport. It takes time for water to flow over the ground, into a creek, down a tributary, and into the main river stem.
+            </p>
+            
+            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl mb-6">
+                <h3 class="text-xl font-medium text-emerald-400 mb-4">The "Time Lag" Matrix</h3>
+                <ul class="space-y-4">
+                    <li class="flex items-start">
+                        <span class="text-emerald-500 mr-3 mt-1">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </span>
+                        <div>
+                            <strong class="text-white block mb-1">Instant Impact (0 - 3 Hours)</strong>
+                            Rain falling directly on the main river valley causes an immediate spike in water levels.
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-emerald-500 mr-3 mt-1">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </span>
+                        <div>
+                            <strong class="text-white block mb-1">Creek Routing (6 - 12 Hours)</strong>
+                            Rain falling in urban areas like Springdale takes hours to travel down Osage Creek before it violently crashes into the Illinois River.
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-emerald-500 mr-3 mt-1">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        </span>
+                        <div>
+                            <strong class="text-white block mb-1">Soil Saturation (Days to Weeks)</strong>
+                            If it rained heavily last week, the ground is completely saturated (acting like a wet sponge). New rain will instantly run off into the river. If it has been a dry summer, the ground will absorb the first 2 inches of rain like a dry sponge, and the river won't move at all.
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Section 3: The AI Model -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-semibold text-white mb-6 border-l-4 border-purple-500 pl-4">3. The Machine Learning Predictor</h2>
+            <p class="mb-6 leading-relaxed">
+                The Illinois River Predictor doesn't use static physics equations. It uses <strong>XGBoost</strong>, an advanced machine learning algorithm, to constantly learn how the river behaves. 
+            </p>
+            
+            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl overflow-hidden mb-8">
+                <h3 class="text-lg font-medium text-slate-300 mb-4 text-center">Data Pipeline Architecture</h3>
+                <div class="flex justify-center bg-slate-900 rounded-xl p-4 border border-slate-700/50">
+                    <pre class="mermaid">
+                        graph TD
+                            A(NOAA Satellites & Radars) --> B[Hourly Rainfall Estimates]
+                            C(USGS River Gauges) --> D[Current River Flow]
+                            
+                            B --> E{Spatial Routing Engine}
+                            E -->|Upper Mainstem| F[Time-Lag Matrix]
+                            E -->|Osage Creek| F
+                            E -->|Flint Creek| F
+                            
+                            D --> F
+                            
+                            F -->|Feeds Data| G((XGBoost AI Model))
+                            G --> H[6-Hour Forecast]
+                            G --> I[12-Hour Forecast]
+                            G --> J[24-Hour Forecast]
+                            
+                            style A fill:#0f172a,stroke:#334155,color:#94a3b8
+                            style C fill:#0f172a,stroke:#334155,color:#94a3b8
+                            style G fill:#7e22ce,stroke:#c084fc,color:#fff,stroke-width:2px
+                            style E fill:#0369a1,stroke:#38bdf8,color:#fff
+                            style F fill:#334155,stroke:#64748b,color:#fff
+                    </pre>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-medium text-purple-400 mb-3">How the AI "Thinks"</h3>
+            <p class="mb-4 leading-relaxed">
+                Every hour, the system downloads exact radar rainfall estimates and current river heights. The <strong>Spatial Routing Engine</strong> groups the 26 tributary creeks into 4 distinct geographic zones. 
+            </p>
+            <p class="mb-4 leading-relaxed">
+                We then create a "Time-Lag Matrix"—giving the AI thousands of columns of data containing what the rain was doing 3 hours ago, 6 hours ago, and 24 hours ago in each of those 4 zones.
+            </p>
+            <p class="leading-relaxed">
+                The XGBoost AI analyzes years of this historical data to find the hidden mathematical patterns. It learns that <em>"2 inches of rain in the Osage Zone, combined with high soil saturation, usually results in a 14-foot spike at the Highway 59 gauge exactly 12 hours later."</em> It then outputs those predictions to the dashboard.
+            </p>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="mt-20 pt-8 border-t border-slate-800 text-center text-slate-500 text-sm">
+            <p>Built for the Illinois River Watershed. Updates hourly.</p>
+        </footer>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'dark',
+            fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+        });
+    </script>
+</body>
+</html>

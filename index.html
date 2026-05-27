@@ -83,16 +83,22 @@
 
     <div class="max-w-6xl mx-auto p-4 sm:p-8">
         <header class="mb-8 border-b border-slate-700 pb-4">
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 class="text-3xl font-bold">Illinois River Predictor</h1>
-                    <p class="text-slate-400 mt-1">AI-Powered Flow & Level Dashboard &middot; <a href="watershed.html" class="text-amber-400 hover:underline font-medium">View Watershed Rainfall (Beta) &rarr;</a></p>
+                    <p class="text-slate-400 mt-1">AI-Powered Flow & Level Dashboard</p>
                 </div>
-                <div class="text-right">
-                    <p id="update-time" class="text-xs text-blue-400 uppercase tracking-widest font-semibold">
-                        Updating...</p>
-                    <p id="forecast-horizon" class="text-xs text-slate-400 mt-1">Forecast horizon: 6h projection</p>
+                <div class="flex items-center gap-4">
+                    <a href="how-it-works.html" class="text-sm font-medium text-purple-400 hover:text-purple-300 transition-colors">How It Works</a>
+                    <a href="watershed.html" class="inline-flex items-center gap-2 rounded-lg bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-400 hover:bg-sky-500/20 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                        Beta AI Watershed Map
+                    </a>
                 </div>
+            </div>
+            <div class="mt-4 text-right">
+                <p id="update-time" class="text-xs text-blue-400 uppercase tracking-widest font-semibold">Updating...</p>
+                <p class="text-xs text-slate-500 mt-1">Predictions refresh hourly at :15 past</p>
             </div>
         </header>
 
