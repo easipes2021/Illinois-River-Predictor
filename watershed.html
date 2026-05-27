@@ -26,6 +26,17 @@
         </header>
 
         <div class="grid gap-6 xl:grid-cols-2">
+            <!-- Beta Predictions Section -->
+            <section class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-sky-500/30 xl:col-span-2 relative overflow-hidden">
+                <div class="absolute inset-0 bg-sky-500/5 pointer-events-none"></div>
+                <h2 class="text-xl font-semibold mb-4 text-sky-400 flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                    Beta AI Model Predictions
+                </h2>
+                <div class="grid gap-4 sm:grid-cols-3" id="beta-predictions-grid">
+                    <div class="text-slate-400 text-sm py-4">Loading Beta Models...</div>
+                </div>
+            </section>
             <!-- Map Section -->
             <section class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
                 <div class="flex items-center justify-between mb-4">
@@ -135,9 +146,10 @@
         async function init() {
             try {
                 // Fetch Data
-                const [geoRes, rainRes] = await Promise.all([
+                const [geoRes, rainRes, betaRes] = await Promise.all([
                     fetch('upper_illinois_huc12.geojson'),
-                    fetch('watershed_rainfall.json')
+                    fetch('watershed_rainfall.json'),
+                    fetch('forecasts_beta.json').catch(() => null)
                 ]);
                 
                 const geojson = await geoRes.json();
@@ -186,6 +198,44 @@
                     `;
                     tbody.appendChild(tr);
                 }
+
+                // Build Beta Predictions
+                if (betaRes && betaRes.ok) {
+                    const betaData = await betaRes.json();
+                    const grid = document.getElementById('beta-predictions-grid');
+                    grid.innerHTML = '';
+                    
+                    const keys = [
+                        {id: 'hwy_16_flow', name: 'Hwy 16 (Siloam Springs)', unit: 'CFS'},
+                        {id: 'hwy_59_flow_est', name: 'Hwy 59 (AR Border)', unit: 'CFS'},
+                        {id: 'watts_ok_flow', name: 'Watts Bridge (OK)', unit: 'CFS'}
+                    ];
+                    
+                    keys.forEach(k => {
+                        const bData = betaData[k.id];
+                        if (bData) {
+                            const cur = bData.current ? bData.current.toLocaleString() : 'N/A';
+                            const f6 = bData.projected_6h ? bData.projected_6h.toLocaleString() : 'N/A';
+                            const f12 = bData.projected_12h ? bData.projected_12h.toLocaleString() : 'N/A';
+                            const f24 = bData.projected_24h ? bData.projected_24h.toLocaleString() : 'N/A';
+                            
+                            grid.innerHTML += `
+                                <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700/50">
+                                    <h3 class="font-bold text-slate-200 mb-2">${k.name}</h3>
+                                    <div class="text-sm text-slate-400 mb-3">Current: <span class="text-white font-mono">${cur} ${k.unit}</span></div>
+                                    <div class="space-y-1">
+                                        <div class="flex justify-between text-xs"><span class="text-slate-500">6h Forecast:</span> <span class="font-mono text-sky-400">${f6}</span></div>
+                                        <div class="flex justify-between text-xs"><span class="text-slate-500">12h Forecast:</span> <span class="font-mono text-sky-400">${f12}</span></div>
+                                        <div class="flex justify-between text-xs"><span class="text-slate-500">24h Forecast:</span> <span class="font-mono text-sky-400">${f24}</span></div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                } else {
+                    document.getElementById('beta-predictions-grid').innerHTML = '<div class="text-rose-400 text-sm py-4">Beta predictions not yet available. The model may still be training.</div>';
+                }
+
             } catch (err) {
                 console.error("Error initializing beta dashboard:", err);
                 document.getElementById('rainfall-tbody').innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-rose-400">Error loading data. The backfill may still be running.</td></tr>`;

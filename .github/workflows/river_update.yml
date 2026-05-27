@@ -60,11 +60,18 @@ jobs:
 
           python forecast_now.py
           echo "forecast_now.py completed"
-          
           echo "Running Beta Watershed Tracker..."
-          python fetch_huc12_precip.py || echo "⚠️ Beta script failed, but continuing pipeline"
+          python fetch_huc12_precip.py || echo "⚠️ Beta precip fetch failed"
+          python merge_beta_data.py || echo "⚠️ Beta merge failed"
           
-          ls -la forecasts.json history.json weather.json watershed_rainfall.json
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || ([ "$CURRENT_HOUR" = "06" ] && [ "$CURRENT_MIN" -lt 30 ]); then
+            echo "🔄 Running daily beta model retraining..."
+            python predict_beta_all.py || echo "⚠️ Beta retrain failed"
+          fi
+          
+          python forecast_beta_now.py || echo "⚠️ Beta forecast failed"
+          
+          ls -la forecasts.json history.json weather.json watershed_rainfall.json forecasts_beta.json || true
         env:
           PYTHONUNBUFFERED: 1
 
@@ -74,8 +81,8 @@ jobs:
         run: |
           git config --global user.name 'Illinois-River-Bot'
           git config --global user.email 'bot@illinoisriver.ai'
-          git add -f huc12_training_data_beta.csv
-          git add forecasts.json history.json weather.json prediction_log.json accuracy_scores.json simulations.json watershed_rainfall.json
+          git add -f huc12_training_data_beta.csv master_training_data_beta.csv
+          git add forecasts.json history.json weather.json prediction_log.json accuracy_scores.json simulations.json watershed_rainfall.json forecasts_beta.json
           git add *.pkl 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "Automated River Update: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
