@@ -86,7 +86,7 @@
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 class="text-3xl font-bold">Illinois River Predictor</h1>
-                    <p class="text-slate-400 mt-1">AI-Powered Flow & Level Dashboard</p>
+                    <p class="text-slate-400 mt-1">AI-Powered Flow & Level Dashboard &middot; <a href="watershed.html" class="text-amber-400 hover:underline font-medium">View Watershed Rainfall (Beta) &rarr;</a></p>
                 </div>
                 <div class="text-right">
                     <p id="update-time" class="text-xs text-blue-400 uppercase tracking-widest font-semibold">
@@ -131,12 +131,25 @@
             <div class="space-y-6">
                 <!-- Live Gauges Section -->
                 <section>
-                    <div class="flex items-center justify-between gap-4 mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
                         <div>
                             <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Live River Conditions</p>
                             <h2 class="text-2xl font-semibold">Gauge Status & Forecast</h2>
                         </div>
-                        <span class="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.3em] text-slate-400 border border-slate-700">Actual Readings</span>
+                        <div class="flex flex-col sm:items-end gap-2">
+                            <span class="inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.3em] text-slate-400 border border-slate-700 w-max">Actual Readings</span>
+                            <div class="flex bg-slate-900 rounded-lg p-1 border border-slate-700 w-full sm:w-auto mt-2 sm:mt-0">
+                                <button id="btn-horizon-6"
+                                    class="flex-1 rounded-md px-4 py-1 text-sm font-medium transition-colors bg-slate-700 text-white"
+                                    onclick="setHorizon(6)">6 hours</button>
+                                <button id="btn-horizon-12"
+                                    class="flex-1 rounded-md px-4 py-1 text-sm font-medium transition-colors text-slate-400 hover:text-white"
+                                    onclick="setHorizon(12)">12 hours</button>
+                                <button id="btn-horizon-24"
+                                    class="flex-1 rounded-md px-4 py-1 text-sm font-medium transition-colors text-slate-400 hover:text-white"
+                                    onclick="setHorizon(24)">24 hours</button>
+                            </div>
+                        </div>
                     </div>
                     <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Live cards will be injected here -->
@@ -194,20 +207,6 @@
                 <section class="bg-slate-800 p-6 rounded-3xl shadow-xl border border-slate-700">
                     <h2 class="text-xl font-semibold mb-4">Dashboard Settings</h2>
                     <div class="space-y-4">
-                        <div>
-                            <label class="text-sm text-slate-400 mb-2 inline-block">Forecast horizon</label>
-                            <div class="flex bg-slate-900 rounded-lg p-1 border border-slate-700">
-                                <button id="btn-horizon-6"
-                                    class="flex-1 rounded-md py-1 text-sm font-medium transition-colors bg-slate-700 text-white"
-                                    onclick="setHorizon(6)">6 hours</button>
-                                <button id="btn-horizon-12"
-                                    class="flex-1 rounded-md py-1 text-sm font-medium transition-colors text-slate-400 hover:text-white"
-                                    onclick="setHorizon(12)">12 hours</button>
-                                <button id="btn-horizon-24"
-                                    class="flex-1 rounded-md py-1 text-sm font-medium transition-colors text-slate-400 hover:text-white"
-                                    onclick="setHorizon(24)">24 hours</button>
-                            </div>
-                        </div>
                         <div>
                             <label class="text-sm text-slate-400 mb-2 inline-block">WOKA ratio <span
                                     id="woka-ratio-value" class="font-semibold text-slate-100">0.82</span></label>

@@ -60,7 +60,11 @@ jobs:
 
           python forecast_now.py
           echo "forecast_now.py completed"
-          ls -la forecasts.json history.json weather.json
+          
+          echo "Running Beta Watershed Tracker..."
+          python fetch_huc12_precip.py || echo "⚠️ Beta script failed, but continuing pipeline"
+          
+          ls -la forecasts.json history.json weather.json watershed_rainfall.json
         env:
           PYTHONUNBUFFERED: 1
 
@@ -70,7 +74,7 @@ jobs:
         run: |
           git config --global user.name 'Illinois-River-Bot'
           git config --global user.email 'bot@illinoisriver.ai'
-          git add forecasts.json history.json weather.json prediction_log.json accuracy_scores.json simulations.json
+          git add forecasts.json history.json weather.json prediction_log.json accuracy_scores.json simulations.json watershed_rainfall.json huc12_training_data_beta.csv
           git add *.pkl 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "Automated River Update: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
