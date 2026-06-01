@@ -61,10 +61,10 @@ def train_multi_models():
         'precip_osage_zone_24h_sum', 'precip_osage_zone_48h_sum',
         
         # --- NWS QPF Forward Windows ---
-        'qpf_next_6h', 'qpf_next_12h', 'qpf_next_24h',
+        'qpf_next_6h', 'qpf_next_12h', 'qpf_next_24h'
         
-        # --- Soil & Seasonal Logic ---
-        'seasonal_cycle', 'hour_sin', 'hour_cos'
+        # NOTE: Removed seasonal_cycle, hour_sin, hour_cos because they cause severe 
+        # overfitting when the training dataset is small (<1 year).
     ]
 
     # 🆕 Beta Routing Rules Architecture
