@@ -33,7 +33,12 @@ jobs:
         run: |
           DATE=$(date -u '+%B %d, %Y')
           TITLE="🌊 Daily Accuracy Report — $DATE"
+          # Append @mention to trigger email notification
           BODY=$(cat daily_report.md)
+          BODY="${BODY}
+
+---
+📬 cc @easipes2021"
           
           # Close any previous daily report issues to keep things tidy
           gh issue list --label "daily-report" --state open --json number -q '.[].number' | while read num; do
@@ -43,10 +48,11 @@ jobs:
           # Create the label if it doesn't exist
           gh label create "daily-report" --color "0075ca" --description "Auto-generated daily accuracy report" 2>/dev/null || true
           
-          # Create the new issue
+          # Create the new issue and assign to repo owner
           gh issue create \
             --title "$TITLE" \
             --body "$BODY" \
-            --label "daily-report"
+            --label "daily-report" \
+            --assignee "easipes2021"
           
           echo "✅ Daily report posted as GitHub Issue"
