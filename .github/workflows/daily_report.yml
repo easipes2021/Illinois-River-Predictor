@@ -1,0 +1,52 @@
+name: Daily Accuracy Report
+
+on:
+  schedule:
+    # 7:00 AM Central = 12:00 UTC (CDT, UTC-5)
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  daily-report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Generate Report
+        run: python generate_daily_report.py
+
+      - name: Post as GitHub Issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date -u '+%B %d, %Y')
+          TITLE="🌊 Daily Accuracy Report — $DATE"
+          BODY=$(cat daily_report.md)
+          
+          # Close any previous daily report issues to keep things tidy
+          gh issue list --label "daily-report" --state open --json number -q '.[].number' | while read num; do
+            gh issue close "$num" --comment "Superseded by new daily report." 2>/dev/null || true
+          done
+          
+          # Create the label if it doesn't exist
+          gh label create "daily-report" --color "0075ca" --description "Auto-generated daily accuracy report" 2>/dev/null || true
+          
+          # Create the new issue
+          gh issue create \
+            --title "$TITLE" \
+            --body "$BODY" \
+            --label "daily-report"
+          
+          echo "✅ Daily report posted as GitHub Issue"
