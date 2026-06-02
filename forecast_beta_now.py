@@ -77,8 +77,7 @@ def generate_multi_forecast():
         'precip_osage_zone_3h_ago', 'precip_osage_zone_6h_ago', 'precip_osage_zone_12h_ago',
         'precip_upper_zone_24h_sum', 'precip_upper_zone_48h_sum',
         'precip_osage_zone_24h_sum', 'precip_osage_zone_48h_sum',
-        'qpf_next_6h', 'qpf_next_12h', 'qpf_next_24h',
-        'seasonal_cycle', 'hour_sin', 'hour_cos'
+        'qpf_next_6h', 'qpf_next_12h', 'qpf_next_24h'
     ]
 
     hwy_16_features = base_features.copy()
