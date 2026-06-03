@@ -48,11 +48,10 @@ jobs:
           # Create the label if it doesn't exist
           gh label create "daily-report" --color "0075ca" --description "Auto-generated daily accuracy report" 2>/dev/null || true
           
-          # Create the new issue and assign to repo owner
+          # Create the new issue
           gh issue create \
             --title "$TITLE" \
             --body "$BODY" \
-            --label "daily-report" \
-            --assignee "easipes2021"
+            --label "daily-report"
           
           echo "✅ Daily report posted as GitHub Issue"
