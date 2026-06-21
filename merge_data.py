@@ -71,12 +71,12 @@ def merge_datasets():
         if not df.empty and df.index.tz is not None:
             df.index = df.index.tz_localize(None)
 
-    river_hourly = river_df.resample('1h').mean()
-    weather_hourly = weather_df.resample('1h').sum()
+    river_hourly = river_df.resample('15min').mean()
+    weather_hourly = weather_df.resample('15min').ffill() / 4.0
     master_df = river_hourly.join(weather_hourly, how='left')
 
     if not regional_df.empty:
-        regional_hourly = regional_df.resample('1h').sum()
+        regional_hourly = regional_df.resample('15min').ffill() / 4.0
         master_df = master_df.join(regional_hourly, how='left')
 
     precip_cols = [c for c in master_df.columns if 'precip_' in c]
@@ -91,26 +91,26 @@ def merge_datasets():
     master_df['hour_cos'] = np.cos(2 * np.pi * master_df['hour_of_day'] / 24)
 
     for col in precip_cols:
-        master_df[f'{col}_saturation'] = master_df[col].rolling(window=72, min_periods=1).sum()
+        master_df[f'{col}_saturation'] = master_df[col].rolling(window=288, min_periods=1).sum()
         # PHASE 1: Multiple precipitation windows (24h, 48h, 168h)
-        master_df[f'{col}_24h'] = master_df[col].rolling(window=24, min_periods=1).sum()
-        master_df[f'{col}_48h'] = master_df[col].rolling(window=48, min_periods=1).sum()
-        master_df[f'{col}_168h'] = master_df[col].rolling(window=168, min_periods=1).sum()
+        master_df[f'{col}_24h'] = master_df[col].rolling(window=96, min_periods=1).sum()
+        master_df[f'{col}_48h'] = master_df[col].rolling(window=192, min_periods=1).sum()
+        master_df[f'{col}_168h'] = master_df[col].rolling(window=2472, min_periods=1).sum()
         # 🆕 PHASE 2 (E): 30-day soil moisture index
-        master_df[f'{col}_720h'] = master_df[col].rolling(window=720, min_periods=1).sum()
+        master_df[f'{col}_720h'] = master_df[col].rolling(window=2880, min_periods=1).sum()
         # 🆕 Time-lagged precipitation features (Routing)
-        master_df[f'{col}_3h_ago'] = master_df[col].shift(3)
-        master_df[f'{col}_6h_ago'] = master_df[col].shift(6)
-        master_df[f'{col}_12h_ago'] = master_df[col].shift(12)
+        master_df[f'{col}_3h_ago'] = master_df[col].shift(48)
+        master_df[f'{col}_6h_ago'] = master_df[col].shift(96)
+        master_df[f'{col}_12h_ago'] = master_df[col].shift(48)
 
     upstream_cols = ['savoy_height', 'osage_creek_flow']
     for col in upstream_cols:
         if col in master_df.columns:
-            master_df[f'{col}_3h_ago'] = master_df[col].shift(3)
-            master_df[f'{col}_6h_ago'] = master_df[col].shift(6)
+            master_df[f'{col}_3h_ago'] = master_df[col].shift(48)
+            master_df[f'{col}_6h_ago'] = master_df[col].shift(96)
             # PHASE 1: Extended lag features (12h, 24h)
-            master_df[f'{col}_12h_ago'] = master_df[col].shift(12)
-            master_df[f'{col}_24h_ago'] = master_df[col].shift(24)
+            master_df[f'{col}_12h_ago'] = master_df[col].shift(48)
+            master_df[f'{col}_24h_ago'] = master_df[col].shift(96)
             # PHASE 1: Trend indicators
             master_df[f'{col}_trend_6h'] = master_df[col].diff(6).fillna(0)
             master_df[f'{col}_trend_24h'] = master_df[col].diff(24).fillna(0)
@@ -121,9 +121,9 @@ def merge_datasets():
     # 🆕 PHASE 2 (B): Cascade lag features — Hwy 16 lags for Hwy 59 model
     for col in ['hwy_16_flow', 'hwy_16_height']:
         if col in master_df.columns:
-            master_df[f'{col}_3h_ago'] = master_df[col].shift(3)
-            master_df[f'{col}_6h_ago'] = master_df[col].shift(6)
-            master_df[f'{col}_12h_ago'] = master_df[col].shift(12)
+            master_df[f'{col}_3h_ago'] = master_df[col].shift(48)
+            master_df[f'{col}_6h_ago'] = master_df[col].shift(96)
+            master_df[f'{col}_12h_ago'] = master_df[col].shift(48)
             master_df[f'{col}_trend_6h'] = master_df[col].diff(6).fillna(0)
 
     # 🆕 PHASE 2 (A): NWS QPF forward precipitation windows
@@ -133,9 +133,9 @@ def merge_datasets():
     if 'precip_expected_mm' in master_df.columns:
         master_df['precip_expected_mm'] = master_df['precip_expected_mm'].fillna(0)
         # Forward-looking rolling sums (shift by -N to look N steps ahead)
-        master_df['qpf_next_6h'] = master_df['precip_expected_mm'].rolling(window=6, min_periods=1).sum().shift(-6).fillna(0)
-        master_df['qpf_next_12h'] = master_df['precip_expected_mm'].rolling(window=12, min_periods=1).sum().shift(-12).fillna(0)
-        master_df['qpf_next_24h'] = master_df['precip_expected_mm'].rolling(window=24, min_periods=1).sum().shift(-24).fillna(0)
+        master_df['qpf_next_6h'] = master_df['precip_expected_mm'].rolling(window=24, min_periods=1).sum().shift(-96).fillna(0)
+        master_df['qpf_next_12h'] = master_df['precip_expected_mm'].rolling(window=48, min_periods=1).sum().shift(-48).fillna(0)
+        master_df['qpf_next_24h'] = master_df['precip_expected_mm'].rolling(window=96, min_periods=1).sum().shift(-96).fillna(0)
         print("✅ NWS QPF forward features computed (qpf_next_6h, 12h, 24h).")
     else:
         master_df['qpf_next_6h'] = 0
@@ -163,8 +163,8 @@ def merge_datasets():
     # 🆕 PHASE 2 (B): Create Hwy 59 lags for Watts Bridge model (must happen after hwy_59_flow_est is calculated)
     for col in ['hwy_59_height', 'hwy_59_flow_est']:
         if col in master_df.columns:
-            master_df[f'{col}_3h_ago'] = master_df[col].shift(3)
-            master_df[f'{col}_6h_ago'] = master_df[col].shift(6)
+            master_df[f'{col}_3h_ago'] = master_df[col].shift(48)
+            master_df[f'{col}_6h_ago'] = master_df[col].shift(96)
             master_df[f'{col}_trend_6h'] = master_df[col].diff(6).fillna(0)
 
     master_df = master_df.dropna(subset=['hwy_59_height', 'watts_ok_height'], how='all')

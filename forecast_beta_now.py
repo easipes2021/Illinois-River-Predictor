@@ -64,45 +64,6 @@ def generate_multi_forecast():
     local_tz = pytz.timezone('US/Central')
     local_time = utc_time.astimezone(local_tz)
 
-    base_features = [
-        'savoy_height', 'osage_creek_flow',
-        'savoy_height_3h_ago', 'savoy_height_6h_ago',
-        'osage_creek_flow_3h_ago', 'osage_creek_flow_6h_ago',
-        'savoy_height_12h_ago', 'savoy_height_24h_ago',
-        'osage_creek_flow_12h_ago', 'osage_creek_flow_24h_ago',
-        'savoy_height_trend_6h', 'savoy_height_trend_24h',
-        'osage_creek_flow_trend_6h', 'osage_creek_flow_trend_24h',
-        'precip_upper_zone', 'precip_osage_zone',
-        'precip_upper_zone_3h_ago', 'precip_upper_zone_6h_ago', 'precip_upper_zone_12h_ago',
-        'precip_osage_zone_3h_ago', 'precip_osage_zone_6h_ago', 'precip_osage_zone_12h_ago',
-        'precip_upper_zone_24h_sum', 'precip_upper_zone_48h_sum',
-        'precip_osage_zone_24h_sum', 'precip_osage_zone_48h_sum',
-        'qpf_next_6h', 'qpf_next_12h', 'qpf_next_24h'
-    ]
-
-    hwy_16_features = base_features.copy()
-
-    hwy_59_features = base_features + [
-        'hwy_16_flow', 'hwy_16_height',
-        'hwy_16_flow_3h_ago', 'hwy_16_flow_6h_ago', 'hwy_16_flow_12h_ago', 'hwy_16_flow_trend_6h',
-        'hwy_16_height_3h_ago', 'hwy_16_height_6h_ago', 'hwy_16_height_12h_ago', 'hwy_16_height_trend_6h',
-        'precip_flint_zone', 'precip_flint_zone_3h_ago', 'precip_flint_zone_6h_ago', 'precip_flint_zone_12h_ago',
-        'precip_flint_zone_24h_sum', 'precip_flint_zone_48h_sum',
-        'precip_lower_zone', 'precip_lower_zone_3h_ago', 'precip_lower_zone_6h_ago', 'precip_lower_zone_12h_ago',
-        'precip_lower_zone_24h_sum', 'precip_lower_zone_48h_sum'
-    ]
-
-    watts_features = hwy_59_features + [
-        'hwy_59_height', 'hwy_59_flow_est',
-        'hwy_59_height_3h_ago', 'hwy_59_height_6h_ago', 'hwy_59_height_trend_6h',
-        'hwy_59_flow_est_3h_ago', 'hwy_59_flow_est_6h_ago', 'hwy_59_flow_est_trend_6h'
-    ]
-
-    feature_sets = {
-        'hwy_16_flow': hwy_16_features,
-        'hwy_59_flow_est': hwy_59_features,
-        'watts_ok_flow': watts_features
-    }
 
     locations = {
         'hwy_16_flow': ('Hwy 16 (Siloam)', 'CFS'),
@@ -164,8 +125,7 @@ def generate_multi_forecast():
                 forecast_results[key][f'projected_{h}h'] = None
             continue
             
-        target_features = feature_sets.get(key, base_features)
-        feature_row = build_feature_row(current_row.reindex(columns=target_features).iloc[0], target_features)
+        
         
         for h in [6, 12, 24]:
             model_path = f'model_beta_{key}_{h}h.pkl'
@@ -176,10 +136,18 @@ def generate_multi_forecast():
 
             try:
                 model = joblib.load(model_path)
-                input_df = pd.DataFrame([feature_row.values], columns=target_features)
+                features = model.get_booster().feature_names
+                
+                for f in features:
+                    if f not in current_row.columns:
+                        current_row[f] = 0
+                
+                input_df = current_row[features].copy()
+                input_df = input_df.fillna(0) # Build robust row
+                
                 pred = model.predict(input_df)[0]
-
-                forecast_results[key][f'projected_{h}h'] = round(float(pred), 2)
+                pred = max(0.0, float(pred)) # Negative flow clipping
+                forecast_results[key][f'projected_{h}h'] = round(pred, 2)
                 print(f"✅ {label} ({h}h): {current_val if current_val is not None else 'N/A'} -> {pred:.2f} {unit}")
 
             except Exception as e:

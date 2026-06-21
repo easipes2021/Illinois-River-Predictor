@@ -10,63 +10,55 @@ def merge_beta_data():
         print("❌ Error: huc12_training_data_beta.csv missing.")
         return
 
-    # Load gauge and time data (ignore the old precip columns)
+    # Load gauge and time data (already at 15-min resolution from merge_data.py)
     master_df = pd.read_csv('master_training_data.csv', index_col=0, parse_dates=True)
     
-    # Columns to keep from master (gauges and their lags/trends + time features + saturation)
-    # Exclude all 'precip_' except the saturation and qpf
     drop_cols = [c for c in master_df.columns if ('precip_' in c and 'saturation' not in c and 'qpf' not in c)]
-    # Also drop hwy_59_flow if it exists since we use hwy_59_flow_est
     if 'hwy_59_flow' in master_df.columns:
         drop_cols.append('hwy_59_flow')
     master_df = master_df.drop(columns=drop_cols, errors='ignore')
 
-    # Load new HUC12 data
+    # Load new HUC12 data (already at 15-min resolution from fetch_huc12_precip.py)
     huc12_df = pd.read_csv('huc12_training_data_beta.csv', index_col=0, parse_dates=True)
     
-    # Merge them. Since both are hourly and timezone-aware, we use an inner join to ensure timestamps match exactly
-    # master_training_data is naive in UTC, huc12 is timezone aware UTC. Let's align them.
     master_df.index = pd.to_datetime(master_df.index, utc=True)
     huc12_df.index = pd.to_datetime(huc12_df.index, utc=True)
     
     merged_df = master_df.join(huc12_df, how='inner')
     
-    # Aggregate into the 4 Routing Zones
-    # Zone 1: Upper Mainstem (Prefixes 01, 02, 04)
-    upper_cols = [c for c in merged_df.columns if c.startswith(('precip_1111010301', 'precip_1111010302', 'precip_1111010304'))]
-    merged_df['precip_upper_zone'] = merged_df[upper_cols].mean(axis=1)
+    # 🆕 SPATIAL RESOLUTION UPGRADE: Keep all 26 HUC-12 grids
+    # We no longer average them into 4 zones!
     
-    # Zone 2: Osage Creek (Prefix 03)
-    osage_cols = [c for c in merged_df.columns if c.startswith('precip_1111010303')]
-    merged_df['precip_osage_zone'] = merged_df[osage_cols].mean(axis=1)
+    zones = [c for c in merged_df.columns if c.startswith('precip_11110103')]
     
-    # Zone 3: Flint Creek (Prefix 05)
-    flint_cols = [c for c in merged_df.columns if c.startswith('precip_1111010305')]
-    merged_df['precip_flint_zone'] = merged_df[flint_cols].mean(axis=1)
-    
-    # Zone 4: Lower Mainstem (Prefix 06)
-    lower_cols = [c for c in merged_df.columns if c.startswith('precip_1111010306')]
-    merged_df['precip_lower_zone'] = merged_df[lower_cols].mean(axis=1)
-
-    # Drop the individual 26 creek columns to prevent the "curse of dimensionality"
-    all_huc_cols = [c for c in merged_df.columns if c.startswith('precip_11110103')]
-    merged_df = merged_df.drop(columns=all_huc_cols)
-
-    # Generate Time-Lagged Features for the 4 zones
-    zones = ['precip_upper_zone', 'precip_osage_zone', 'precip_flint_zone', 'precip_lower_zone']
+    # 15-minute intervals: 1 hour = 4 steps
     for zone in zones:
-        merged_df[f'{zone}_3h_ago'] = merged_df[zone].shift(3)
-        merged_df[f'{zone}_6h_ago'] = merged_df[zone].shift(6)
-        merged_df[f'{zone}_12h_ago'] = merged_df[zone].shift(12)
-        merged_df[f'{zone}_24h_sum'] = merged_df[zone].rolling(window=24, min_periods=1).sum()
-        merged_df[f'{zone}_48h_sum'] = merged_df[zone].rolling(window=48, min_periods=1).sum()
+        # Lags
+        merged_df[f'{zone}_3h_ago'] = merged_df[zone].shift(12)
+        merged_df[f'{zone}_6h_ago'] = merged_df[zone].shift(24)
+        merged_df[f'{zone}_12h_ago'] = merged_df[zone].shift(48)
+        
+        # Short-term intensity
+        merged_df[f'{zone}_3h_sum'] = merged_df[zone].rolling(window=12, min_periods=1).sum()
+        merged_df[f'{zone}_6h_sum'] = merged_df[zone].rolling(window=24, min_periods=1).sum()
+        
+        # Standard sums
+        merged_df[f'{zone}_24h_sum'] = merged_df[zone].rolling(window=96, min_periods=1).sum()
+        merged_df[f'{zone}_48h_sum'] = merged_df[zone].rolling(window=192, min_periods=1).sum()
+        
+        # Long-term saturation (Antecedent Moisture)
+        merged_df[f'{zone}_168h_sum'] = merged_df[zone].rolling(window=672, min_periods=1).sum()
+        merged_df[f'{zone}_720h_sum'] = merged_df[zone].rolling(window=2880, min_periods=1).sum()
+        
+        # Non-linear interaction: Intensity * Saturation
+        merged_df[f'{zone}_runoff_risk'] = merged_df[f'{zone}_6h_sum'] * merged_df[f'{zone}_168h_sum']
 
     # Drop NaNs created by lagging
     merged_df = merged_df.dropna()
 
     merged_df.to_csv('master_training_data_beta.csv')
-    print(f"✅ Beta master dataset created: {len(merged_df)} rows.")
-    print("Features included:", merged_df.columns.tolist())
+    print(f"✅ Beta master dataset created: {len(merged_df)} rows at 15-min resolution.")
+    print(f"Features included: {len(merged_df.columns)} columns")
 
 if __name__ == '__main__':
     merge_beta_data()

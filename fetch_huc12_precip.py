@@ -21,26 +21,26 @@ def fetch_huc12_precip(days_history=30):
         name = info['name']
         lat, lon = info['lat'], info['lon']
         
-        # Open-Meteo Archive for past data
-        url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={end_date}&hourly=precipitation&timezone=UTC"
+        # Open-Meteo Archive for past data - using 15-minute resolution
+        url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={end_date}&minutely_15=precipitation&timezone=UTC"
         
         try:
             resp = requests.get(url, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
-                if 'hourly' in data:
+                if 'minutely_15' in data:
                     df = pd.DataFrame({
-                        'timestamp': data['hourly']['time'],
-                        f'precip_{huc12}': data['hourly']['precipitation']
+                        'timestamp': data['minutely_15']['time'],
+                        f'precip_{huc12}': data['minutely_15']['precipitation']
                     })
                     df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
                     df = df.set_index('timestamp')
                     all_data.append(df)
                     
                     # For frontend: get last 1hr and 24hr sums
-                    # Data is hourly, so we sum the tail
-                    last_24h = df.tail(24).sum().iloc[0]
-                    last_1h = df.tail(1).sum().iloc[0]
+                    # Data is 15-minute, so 1hr = tail(4), 24hr = tail(96)
+                    last_24h = df.tail(96).sum().iloc[0]
+                    last_1h = df.tail(4).sum().iloc[0]
                     
                     # Convert mm to inches
                     frontend_data[huc12] = {
@@ -56,15 +56,15 @@ def fetch_huc12_precip(days_history=30):
     forecast_end = (datetime.utcnow() + timedelta(days=1)).strftime('%Y-%m-%d')
     for huc12, info in centroids.items():
         lat, lon = info['lat'], info['lon']
-        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=precipitation&timezone=UTC&start_date={end_date}&end_date={forecast_end}"
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&minutely_15=precipitation&timezone=UTC&start_date={end_date}&end_date={forecast_end}"
         try:
             resp = requests.get(url, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
-                if 'hourly' in data:
+                if 'minutely_15' in data:
                     df = pd.DataFrame({
-                        'timestamp': data['hourly']['time'],
-                        'precip': data['hourly']['precipitation']
+                        'timestamp': data['minutely_15']['time'],
+                        'precip': data['minutely_15']['precipitation']
                     })
                     df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
                     # Get next 24 hours from now
