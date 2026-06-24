@@ -21,8 +21,8 @@ def fetch_huc12_precip(days_history=30):
         name = info['name']
         lat, lon = info['lat'], info['lon']
         
-        # Open-Meteo Archive for past data - using 15-minute resolution
-        url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date}&end_date={end_date}&minutely_15=precipitation&timezone=UTC"
+        # Open-Meteo Forecast API with past_days for real-time up-to-date 15-minute resolution
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&past_days={days_history}&minutely_15=precipitation&timezone=UTC"
         
         try:
             resp = requests.get(url, timeout=10)
