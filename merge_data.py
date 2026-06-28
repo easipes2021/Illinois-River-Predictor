@@ -9,7 +9,9 @@ def apply_hwy59_interpolation(H, paired_data):
     Uses historical paired data for Hwy 59 to interpolate flow from height.
     This is much more accurate than a simple piecewise power law.
     """
-    if pd.isna(H) or H <= 0:
+    if pd.isna(H):
+        return np.nan
+    if H <= 0:
         return 0.0
     
     # Linear interpolation using historical height/flow pairs
@@ -20,7 +22,9 @@ def apply_sskp_rating(H, meta):
     """
     Implements the piecewise rating relationship used for Hwy 59. (Fallback)
     """
-    if pd.isna(H) or H <= 0:
+    if pd.isna(H):
+        return np.nan
+    if H <= 0:
         return 0.0
 
     bp = meta.get('piecewise_breakpoint', 2.5)
