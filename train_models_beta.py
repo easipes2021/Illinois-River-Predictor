@@ -60,20 +60,25 @@ def retrain_beta_models():
 
             X = model_df[features]
             y = model_df['target_future']
+            # Calculate sample weights to emphasize high flows
+            mean_y = y.mean()
+            # Dynamic weighting: base weight of 1.0, plus proportional weight for flows above average
+            weights = np.where(y > mean_y, 1.0 + (y / mean_y), 1.0)
             
             # Use 'hist' tree method which is drastically faster and scales well with 200+ features
             model = xgb.XGBRegressor(
                 n_estimators=300,
-                max_depth=5,
+                max_depth=7,
                 learning_rate=0.05,
                 subsample=0.8,
                 colsample_bytree=0.8,
+                reg_lambda=2.0,
                 tree_method='hist',
-                objective='reg:absoluteerror',
+                objective='reg:squarederror',
                 random_state=42
             )
             
-            model.fit(X, y)
+            model.fit(X, y, sample_weight=weights)
             filename = f'model_beta_{target}_{horizon}.pkl'
             joblib.dump(model, filename)
             print(f"✅ Saved {filename} with {len(features)} features")
