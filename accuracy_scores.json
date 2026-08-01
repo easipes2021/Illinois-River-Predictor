@@ -1,18 +1,18 @@
 {
-  "last_updated": "2026-08-01T10:15:24.126498+00:00",
+  "last_updated": "2026-08-01T11:40:35.389765+00:00",
   "total_predictions_logged": 3393,
-  "total_scored": 3101,
+  "total_scored": 3102,
   "min_required": 10,
   "gauges": {
     "hwy_16_flow": {
       "name": "Hwy 16 (Siloam)",
       "horizons": {
         "6h": {
-          "mae": 126.2,
-          "mape": 43.83,
+          "mae": 126.44,
+          "mape": 43.93,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 374,
+          "sample_count": 373,
           "recent_trend": "improving",
           "last_10_errors": [
             49.85,
@@ -28,15 +28,13 @@
           ]
         },
         "12h": {
-          "mae": 139.68,
-          "mape": 47.78,
+          "mae": 140.05,
+          "mape": 47.94,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 370,
+          "sample_count": 371,
           "recent_trend": "improving",
           "last_10_errors": [
-            59.62,
-            54.26,
             53.94,
             55.48,
             55.56,
@@ -44,18 +42,19 @@
             60.75,
             60.58,
             63.01,
-            62.05
+            62.05,
+            60.07,
+            61.91
           ]
         },
         "24h": {
-          "mae": 151.19,
-          "mape": 50.8,
+          "mae": 151.29,
+          "mape": 50.87,
           "confidence_score": 0,
           "confidence_label": "Poor",
           "sample_count": 364,
           "recent_trend": "improving",
           "last_10_errors": [
-            51.49,
             42.72,
             42.89,
             44.17,
@@ -64,31 +63,14 @@
             44.07,
             41.89,
             47.48,
-            50.16
+            50.16,
+            51.11
           ]
         }
       },
       "overall_confidence": 0,
       "overall_label": "Poor",
       "recent_predictions": [
-        {
-          "target_time": "2026-07-31T09:30:00+00:00",
-          "horizon": "12h",
-          "predicted": 447.35,
-          "actual": 278.0
-        },
-        {
-          "target_time": "2026-07-31T21:30:00+00:00",
-          "horizon": "24h",
-          "predicted": 423.47,
-          "actual": 290.0
-        },
-        {
-          "target_time": "2026-07-31T05:15:00+00:00",
-          "horizon": "6h",
-          "predicted": 446.54,
-          "actual": 290.0
-        },
         {
           "target_time": "2026-07-31T11:15:00+00:00",
           "horizon": "12h",
@@ -168,6 +150,12 @@
           "actual": 287.0
         },
         {
+          "target_time": "2026-08-01T10:15:00+00:00",
+          "horizon": "24h",
+          "predicted": 409.5,
+          "actual": 271.0
+        },
+        {
           "target_time": "2026-07-31T18:30:00+00:00",
           "horizon": "6h",
           "predicted": 447.17,
@@ -234,10 +222,22 @@
           "actual": 281.0
         },
         {
+          "target_time": "2026-08-01T09:30:00+00:00",
+          "horizon": "12h",
+          "predicted": 433.78,
+          "actual": 271.0
+        },
+        {
           "target_time": "2026-08-01T04:30:00+00:00",
           "horizon": "6h",
           "predicted": 412.98,
           "actual": 278.0
+        },
+        {
+          "target_time": "2026-08-01T10:30:00+00:00",
+          "horizon": "12h",
+          "predicted": 438.78,
+          "actual": 271.0
         },
         {
           "target_time": "2026-08-01T05:30:00+00:00",
@@ -257,11 +257,11 @@
       "name": "Hwy 59 (AR Bridge)",
       "horizons": {
         "6h": {
-          "mae": 209.79,
-          "mape": 63.75,
+          "mae": 208.9,
+          "mape": 63.68,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 365,
+          "sample_count": 364,
           "recent_trend": "improving",
           "last_10_errors": [
             57.04,
@@ -277,15 +277,13 @@
           ]
         },
         "12h": {
-          "mae": 237.11,
-          "mape": 71.72,
+          "mae": 236.89,
+          "mape": 71.81,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 361,
+          "sample_count": 362,
           "recent_trend": "improving",
           "last_10_errors": [
-            70.12,
-            69.72,
             57.65,
             62.2,
             52.71,
@@ -293,18 +291,19 @@
             63.83,
             69.97,
             69.74,
-            72.68
+            72.68,
+            76.33,
+            78.03
           ]
         },
         "24h": {
-          "mae": 382.78,
-          "mape": 108.15,
+          "mae": 382.02,
+          "mape": 108.12,
           "confidence_score": 0,
           "confidence_label": "Poor",
           "sample_count": 357,
           "recent_trend": "declining",
           "last_10_errors": [
-            71.84,
             66.46,
             261.01,
             60.13,
@@ -313,31 +312,14 @@
             57.42,
             61.61,
             77.26,
-            79.05
+            79.05,
+            79.0
           ]
         }
       },
       "overall_confidence": 0,
       "overall_label": "Poor",
       "recent_predictions": [
-        {
-          "target_time": "2026-07-31T09:30:00+00:00",
-          "horizon": "12h",
-          "predicted": 518.96,
-          "actual": 315.38
-        },
-        {
-          "target_time": "2026-07-31T21:30:00+00:00",
-          "horizon": "24h",
-          "predicted": 534.72,
-          "actual": 338.56
-        },
-        {
-          "target_time": "2026-07-31T05:15:00+00:00",
-          "horizon": "6h",
-          "predicted": 516.17,
-          "actual": 331.43
-        },
         {
           "target_time": "2026-07-31T11:15:00+00:00",
           "horizon": "12h",
@@ -417,6 +399,12 @@
           "actual": 338.56
         },
         {
+          "target_time": "2026-08-01T10:15:00+00:00",
+          "horizon": "24h",
+          "predicted": 522.17,
+          "actual": 291.71
+        },
+        {
           "target_time": "2026-07-31T18:30:00+00:00",
           "horizon": "6h",
           "predicted": 515.51,
@@ -483,10 +471,22 @@
           "actual": 313.44
         },
         {
+          "target_time": "2026-08-01T09:30:00+00:00",
+          "horizon": "12h",
+          "predicted": 514.38,
+          "actual": 291.71
+        },
+        {
           "target_time": "2026-08-01T04:30:00+00:00",
           "horizon": "6h",
           "predicted": 513.92,
           "actual": 304.0
+        },
+        {
+          "target_time": "2026-08-01T10:30:00+00:00",
+          "horizon": "12h",
+          "predicted": 514.99,
+          "actual": 289.27
         },
         {
           "target_time": "2026-08-01T05:30:00+00:00",
@@ -506,14 +506,13 @@
       "name": "Watts Bridge (OK)",
       "horizons": {
         "6h": {
-          "mae": 205.19,
-          "mape": 57.11,
+          "mae": 205.86,
+          "mape": 57.34,
           "confidence_score": 0,
           "confidence_label": "Poor",
           "sample_count": 299,
-          "recent_trend": "improving",
+          "recent_trend": "declining",
           "last_10_errors": [
-            49.41,
             54.74,
             59.17,
             60.3,
@@ -522,19 +521,18 @@
             90.96,
             78.73,
             73.18,
-            69.31
+            69.31,
+            75.72
           ]
         },
         "12h": {
-          "mae": 225.66,
-          "mape": 61.87,
+          "mae": 225.79,
+          "mape": 61.93,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 303,
+          "sample_count": 305,
           "recent_trend": "improving",
           "last_10_errors": [
-            61.63,
-            63.16,
             63.19,
             60.62,
             59.52,
@@ -542,15 +540,17 @@
             80.18,
             70.83,
             69.48,
-            70.28
+            70.28,
+            70.48,
+            71.96
           ]
         },
         "24h": {
-          "mae": 292.13,
-          "mape": 72.72,
+          "mae": 291.32,
+          "mape": 72.69,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 308,
+          "sample_count": 307,
           "recent_trend": "declining",
           "last_10_errors": [
             80.24,
@@ -569,24 +569,6 @@
       "overall_confidence": 0,
       "overall_label": "Poor",
       "recent_predictions": [
-        {
-          "target_time": "2026-07-31T06:30:00+00:00",
-          "horizon": "12h",
-          "predicted": 638.18,
-          "actual": 375.0
-        },
-        {
-          "target_time": "2026-07-31T18:30:00+00:00",
-          "horizon": "24h",
-          "predicted": 627.65,
-          "actual": 382.0
-        },
-        {
-          "target_time": "2026-07-31T03:30:00+00:00",
-          "horizon": "6h",
-          "predicted": 599.49,
-          "actual": 354.0
-        },
         {
           "target_time": "2026-07-31T09:30:00+00:00",
           "horizon": "12h",
@@ -738,16 +720,34 @@
           "actual": 330.0
         },
         {
+          "target_time": "2026-08-01T10:30:00+00:00",
+          "horizon": "12h",
+          "predicted": 591.55,
+          "actual": 347.0
+        },
+        {
           "target_time": "2026-08-01T05:30:00+00:00",
           "horizon": "6h",
           "predicted": 590.54,
           "actual": 341.0
         },
         {
+          "target_time": "2026-08-01T11:30:00+00:00",
+          "horizon": "12h",
+          "predicted": 591.55,
+          "actual": 344.0
+        },
+        {
           "target_time": "2026-08-01T07:30:00+00:00",
           "horizon": "6h",
           "predicted": 592.59,
           "actual": 350.0
+        },
+        {
+          "target_time": "2026-08-01T11:30:00+00:00",
+          "horizon": "6h",
+          "predicted": 604.46,
+          "actual": 344.0
         }
       ]
     }
