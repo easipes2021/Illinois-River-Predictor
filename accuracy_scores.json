@@ -1,21 +1,20 @@
 {
-  "last_updated": "2026-08-07T06:48:52.922613+00:00",
-  "total_predictions_logged": 3384,
-  "total_scored": 3083,
+  "last_updated": "2026-08-07T08:10:33.635621+00:00",
+  "total_predictions_logged": 3393,
+  "total_scored": 3084,
   "min_required": 10,
   "gauges": {
     "hwy_16_flow": {
       "name": "Hwy 16 (Siloam)",
       "horizons": {
         "6h": {
-          "mae": 141.34,
-          "mape": 52.02,
+          "mae": 141.45,
+          "mape": 52.08,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 370,
+          "sample_count": 371,
           "recent_trend": "declining",
           "last_10_errors": [
-            72.2,
             74.38,
             74.38,
             74.38,
@@ -24,7 +23,8 @@
             74.33,
             70.5,
             82.82,
-            80.57
+            80.57,
+            76.57
           ]
         },
         "12h": {
@@ -71,12 +71,6 @@
       "overall_confidence": 0,
       "overall_label": "Poor",
       "recent_predictions": [
-        {
-          "target_time": "2026-08-06T02:30:00+00:00",
-          "horizon": "12h",
-          "predicted": 415.65,
-          "actual": 237.0
-        },
         {
           "target_time": "2026-08-06T14:30:00+00:00",
           "horizon": "24h",
@@ -249,6 +243,12 @@
           "target_time": "2026-08-07T00:30:00+00:00",
           "horizon": "12h",
           "predicted": 412.9,
+          "actual": 234.0
+        },
+        {
+          "target_time": "2026-08-07T06:15:00+00:00",
+          "horizon": "6h",
+          "predicted": 413.17,
           "actual": 234.0
         }
       ]
