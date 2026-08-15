@@ -1,7 +1,7 @@
 {
-  "last_updated": "2026-08-15T05:49:57.848145+00:00",
-  "total_predictions_logged": 4065,
-  "total_scored": 3606,
+  "last_updated": "2026-08-15T06:25:22.542016+00:00",
+  "total_predictions_logged": 4074,
+  "total_scored": 3610,
   "min_required": 10,
   "gauges": {
     "hwy_16_flow": {
@@ -28,15 +28,13 @@
           ]
         },
         "12h": {
-          "mae": 177.06,
-          "mape": 72.01,
+          "mae": 177.09,
+          "mape": 72.02,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 433,
+          "sample_count": 435,
           "recent_trend": "declining",
           "last_10_errors": [
-            78.72,
-            70.98,
             75.53,
             77.36,
             72.74,
@@ -44,18 +42,19 @@
             74.83,
             74.83,
             75.26,
-            75.86
+            75.86,
+            73.72,
+            73.72
           ]
         },
         "24h": {
-          "mae": 183.67,
-          "mape": 75.05,
+          "mae": 183.71,
+          "mape": 75.06,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 423,
+          "sample_count": 424,
           "recent_trend": "improving",
           "last_10_errors": [
-            86.58,
             86.58,
             86.58,
             82.59,
@@ -64,7 +63,8 @@
             84.51,
             84.51,
             80.77,
-            81.89
+            81.89,
+            80.03
           ]
         }
       },
@@ -72,22 +72,10 @@
       "overall_label": "Poor",
       "recent_predictions": [
         {
-          "target_time": "2026-08-15T03:15:00+00:00",
+          "target_time": "2026-08-15T05:15:00+00:00",
           "horizon": "24h",
-          "predicted": 451.09,
-          "actual": 248.0
-        },
-        {
-          "target_time": "2026-08-14T11:15:00+00:00",
-          "horizon": "6h",
-          "predicted": 428.96,
+          "predicted": 451.88,
           "actual": 251.0
-        },
-        {
-          "target_time": "2026-08-14T17:15:00+00:00",
-          "horizon": "12h",
-          "predicted": 434.3,
-          "actual": 243.0
         },
         {
           "target_time": "2026-08-14T12:30:00+00:00",
@@ -204,10 +192,22 @@
           "actual": 245.0
         },
         {
+          "target_time": "2026-08-15T05:15:00+00:00",
+          "horizon": "12h",
+          "predicted": 436.03,
+          "actual": 251.0
+        },
+        {
           "target_time": "2026-08-14T23:30:00+00:00",
           "horizon": "6h",
           "predicted": 427.82,
           "actual": 245.0
+        },
+        {
+          "target_time": "2026-08-15T05:30:00+00:00",
+          "horizon": "12h",
+          "predicted": 436.03,
+          "actual": 251.0
         },
         {
           "target_time": "2026-08-15T01:15:00+00:00",
@@ -277,14 +277,13 @@
           ]
         },
         "12h": {
-          "mae": 303.73,
-          "mape": 128.2,
+          "mae": 303.86,
+          "mape": 128.34,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 438,
+          "sample_count": 439,
           "recent_trend": "improving",
           "last_10_errors": [
-            178.68,
             179.44,
             179.56,
             175.43,
@@ -293,6 +292,7 @@
             178.24,
             186.07,
             185.88,
+            190.27,
             190.27
           ]
         },
@@ -320,12 +320,6 @@
       "overall_confidence": 0,
       "overall_label": "Poor",
       "recent_predictions": [
-        {
-          "target_time": "2026-08-14T17:15:00+00:00",
-          "horizon": "12h",
-          "predicted": 546.22,
-          "actual": 198.0
-        },
         {
           "target_time": "2026-08-15T05:15:00+00:00",
           "horizon": "24h",
@@ -457,6 +451,12 @@
           "horizon": "6h",
           "predicted": 545.04,
           "actual": 198.0
+        },
+        {
+          "target_time": "2026-08-15T05:30:00+00:00",
+          "horizon": "12h",
+          "predicted": 551.52,
+          "actual": 190.0
         },
         {
           "target_time": "2026-08-15T01:15:00+00:00",
