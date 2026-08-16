@@ -1,22 +1,21 @@
 {
-  "last_updated": "2026-08-16T05:56:03.949767+00:00",
-  "total_predictions_logged": 4299,
-  "total_scored": 3810,
+  "last_updated": "2026-08-16T06:29:03.217591+00:00",
+  "total_predictions_logged": 4308,
+  "total_scored": 3815,
   "min_required": 10,
   "gauges": {
     "hwy_16_flow": {
       "name": "Hwy 16 (Siloam)",
       "horizons": {
         "6h": {
-          "mae": 162.72,
-          "mape": 66.41,
+          "mae": 162.37,
+          "mape": 66.27,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 467,
+          "sample_count": 468,
           "recent_trend": "stable",
           "last_10_errors": [
             0.29,
-            0.29,
             0.03,
             0.03,
             0.0,
@@ -24,19 +23,18 @@
             0.15,
             0.15,
             0.15,
-            0.15
+            0.15,
+            0.62
           ]
         },
         "12h": {
-          "mae": 171.81,
-          "mape": 70.19,
+          "mae": 171.06,
+          "mape": 69.89,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 455,
+          "sample_count": 457,
           "recent_trend": "stable",
           "last_10_errors": [
-            0.99,
-            1.16,
             1.1,
             1.1,
             0.65,
@@ -44,18 +42,19 @@
             0.13,
             0.13,
             0.11,
-            0.11
+            0.11,
+            0.56,
+            0.56
           ]
         },
         "24h": {
-          "mae": 186.23,
-          "mape": 76.44,
+          "mae": 186.29,
+          "mape": 76.46,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 434,
-          "recent_trend": "declining",
+          "sample_count": 435,
+          "recent_trend": "stable",
           "last_10_errors": [
-            83.32,
             86.79,
             85.26,
             85.26,
@@ -64,7 +63,8 @@
             83.02,
             84.14,
             84.14,
-            84.14
+            84.14,
+            84.46
           ]
         }
       },
@@ -72,24 +72,6 @@
       "overall_label": "Poor",
       "recent_predictions": [
         {
-          "target_time": "2026-08-15T18:30:00+00:00",
-          "horizon": "6h",
-          "predicted": 245.62,
-          "actual": 248.0
-        },
-        {
-          "target_time": "2026-08-16T00:30:00+00:00",
-          "horizon": "12h",
-          "predicted": 245.13,
-          "actual": 248.0
-        },
-        {
-          "target_time": "2026-08-15T19:30:00+00:00",
-          "horizon": "6h",
-          "predicted": 245.02,
-          "actual": 251.0
-        },
-        {
           "target_time": "2026-08-16T01:30:00+00:00",
           "horizon": "12h",
           "predicted": 245.28,
@@ -186,12 +168,24 @@
           "actual": 248.0
         },
         {
+          "target_time": "2026-08-16T05:30:00+00:00",
+          "horizon": "12h",
+          "predicted": 249.39,
+          "actual": 248.0
+        },
+        {
           "target_time": "2026-08-15T23:30:00+00:00",
           "horizon": "6h",
           "predicted": 248.66,
           "actual": 248.0
         },
         {
+          "target_time": "2026-08-16T05:30:00+00:00",
+          "horizon": "12h",
+          "predicted": 249.4,
+          "actual": 248.0
+        },
+        {
           "target_time": "2026-08-16T00:30:00+00:00",
           "horizon": "6h",
           "predicted": 248.71,
@@ -249,6 +243,12 @@
           "target_time": "2026-08-16T04:30:00+00:00",
           "horizon": "6h",
           "predicted": 247.62,
+          "actual": 248.0
+        },
+        {
+          "target_time": "2026-08-16T05:30:00+00:00",
+          "horizon": "6h",
+          "predicted": 246.47,
           "actual": 248.0
         }
       ]
@@ -297,14 +297,13 @@
           ]
         },
         "24h": {
-          "mae": 371.15,
-          "mape": 161.28,
+          "mae": 370.33,
+          "mape": 160.92,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 439,
-          "recent_trend": "declining",
+          "sample_count": 440,
+          "recent_trend": "improving",
           "last_10_errors": [
-            255.73,
             250.29,
             250.29,
             255.73,
@@ -313,7 +312,8 @@
             269.16,
             274.3,
             274.3,
-            276.55
+            276.55,
+            4.53
           ]
         }
       },
