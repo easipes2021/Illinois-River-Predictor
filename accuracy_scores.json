@@ -1,21 +1,20 @@
 {
-  "last_updated": "2026-08-18T20:50:06.071468+00:00",
-  "total_predictions_logged": 4788,
-  "total_scored": 4294,
+  "last_updated": "2026-08-18T21:19:20.772329+00:00",
+  "total_predictions_logged": 4797,
+  "total_scored": 4300,
   "min_required": 10,
   "gauges": {
     "hwy_16_flow": {
       "name": "Hwy 16 (Siloam)",
       "horizons": {
         "6h": {
-          "mae": 137.99,
-          "mape": 56.94,
+          "mae": 137.73,
+          "mape": 56.83,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 519,
+          "sample_count": 520,
           "recent_trend": "stable",
           "last_10_errors": [
-            1.57,
             0.12,
             0.45,
             0.2,
@@ -24,18 +23,18 @@
             2.24,
             2.08,
             2.78,
-            1.6
+            1.6,
+            1.62
           ]
         },
         "12h": {
-          "mae": 144.66,
-          "mape": 59.71,
+          "mae": 144.38,
+          "mape": 59.59,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 510,
+          "sample_count": 511,
           "recent_trend": "stable",
           "last_10_errors": [
-            0.22,
             0.44,
             0.75,
             0.08,
@@ -44,19 +43,18 @@
             2.73,
             1.17,
             1.07,
+            0.09,
             0.09
           ]
         },
         "24h": {
-          "mae": 155.22,
-          "mape": 64.3,
+          "mae": 154.6,
+          "mape": 64.05,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 494,
+          "sample_count": 496,
           "recent_trend": "stable",
           "last_10_errors": [
-            1.64,
-            1.65,
             1.67,
             1.68,
             1.68,
@@ -64,25 +62,15 @@
             2.18,
             2.18,
             0.9,
-            0.9
+            0.9,
+            0.78,
+            0.71
           ]
         }
       },
       "overall_confidence": 0,
       "overall_label": "Poor",
       "recent_predictions": [
-        {
-          "target_time": "2026-08-18T10:30:00+00:00",
-          "horizon": "12h",
-          "predicted": 247.46,
-          "actual": 248.0
-        },
-        {
-          "target_time": "2026-08-18T05:30:00+00:00",
-          "horizon": "6h",
-          "predicted": 245.52,
-          "actual": 245.0
-        },
         {
           "target_time": "2026-08-18T11:30:00+00:00",
           "horizon": "12h",
@@ -204,6 +192,12 @@
           "actual": 251.0
         },
         {
+          "target_time": "2026-08-18T20:30:00+00:00",
+          "horizon": "12h",
+          "predicted": 250.77,
+          "actual": 251.0
+        },
+        {
           "target_time": "2026-08-18T15:30:00+00:00",
           "horizon": "6h",
           "predicted": 252.12,
@@ -249,6 +243,12 @@
           "target_time": "2026-08-18T20:15:00+00:00",
           "horizon": "6h",
           "predicted": 246.99,
+          "actual": 251.0
+        },
+        {
+          "target_time": "2026-08-18T20:30:00+00:00",
+          "horizon": "6h",
+          "predicted": 246.94,
           "actual": 251.0
         }
       ]
@@ -506,11 +506,11 @@
       "name": "Watts Bridge (OK)",
       "horizons": {
         "6h": {
-          "mae": 251.82,
-          "mape": 93.88,
+          "mae": 251.92,
+          "mape": 93.89,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 420,
+          "sample_count": 421,
           "recent_trend": "improving",
           "last_10_errors": [
             4.04,
@@ -546,14 +546,13 @@
           ]
         },
         "24h": {
-          "mae": 280.23,
-          "mape": 103.15,
+          "mae": 279.63,
+          "mape": 102.93,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 403,
+          "sample_count": 404,
           "recent_trend": "improving",
           "last_10_errors": [
-            0.63,
             0.33,
             0.62,
             13.44,
@@ -562,7 +561,8 @@
             7.4,
             10.92,
             10.92,
-            14.85
+            14.85,
+            14.95
           ]
         }
       },
