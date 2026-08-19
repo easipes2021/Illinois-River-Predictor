@@ -1,7 +1,7 @@
 {
-  "last_updated": "2026-08-19T14:28:31.109755+00:00",
-  "total_predictions_logged": 4932,
-  "total_scored": 4449,
+  "last_updated": "2026-08-19T15:03:43.979591+00:00",
+  "total_predictions_logged": 4941,
+  "total_scored": 4451,
   "min_required": 10,
   "gauges": {
     "hwy_16_flow": {
@@ -506,14 +506,13 @@
       "name": "Watts Bridge (OK)",
       "horizons": {
         "6h": {
-          "mae": 242.05,
-          "mape": 90.58,
+          "mae": 241.55,
+          "mape": 90.4,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 435,
-          "recent_trend": "declining",
+          "sample_count": 436,
+          "recent_trend": "improving",
           "last_10_errors": [
-            24.24,
             24.68,
             17.41,
             9.26,
@@ -522,7 +521,8 @@
             10.55,
             7.79,
             8.3,
-            4.99
+            4.99,
+            10.45
           ]
         },
         "12h": {
@@ -546,14 +546,13 @@
           ]
         },
         "24h": {
-          "mae": 270.49,
-          "mape": 99.95,
+          "mae": 269.86,
+          "mape": 99.72,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 416,
+          "sample_count": 417,
           "recent_trend": "improving",
           "last_10_errors": [
-            19.16,
             22.27,
             16.1,
             9.6,
@@ -562,19 +561,14 @@
             12.04,
             9.04,
             9.6,
-            6.76
+            6.76,
+            3.77
           ]
         }
       },
       "overall_confidence": 0,
       "overall_label": "Poor",
       "recent_predictions": [
-        {
-          "target_time": "2026-08-19T04:30:00+00:00",
-          "horizon": "12h",
-          "predicted": 233.23,
-          "actual": 204.0
-        },
         {
           "target_time": "2026-08-18T23:15:00+00:00",
           "horizon": "6h",
@@ -748,6 +742,12 @@
           "horizon": "6h",
           "predicted": 220.42,
           "actual": 232.0
+        },
+        {
+          "target_time": "2026-08-19T14:30:00+00:00",
+          "horizon": "6h",
+          "predicted": 231.03,
+          "actual": 258.0
         }
       ]
     }
