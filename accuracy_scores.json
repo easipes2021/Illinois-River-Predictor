@@ -1,7 +1,7 @@
 {
-  "last_updated": "2026-08-22T10:48:13.822831+00:00",
-  "total_predictions_logged": 5520,
-  "total_scored": 4966,
+  "last_updated": "2026-08-22T11:15:47.871451+00:00",
+  "total_predictions_logged": 5529,
+  "total_scored": 4968,
   "min_required": 10,
   "gauges": {
     "hwy_16_flow": {
@@ -506,14 +506,13 @@
       "name": "Watts Bridge (OK)",
       "horizons": {
         "6h": {
-          "mae": 205.49,
-          "mape": 78.45,
+          "mae": 205.07,
+          "mape": 78.29,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 487,
-          "recent_trend": "declining",
+          "sample_count": 488,
+          "recent_trend": "improving",
           "last_10_errors": [
-            45.25,
             33.32,
             25.85,
             25.85,
@@ -522,15 +521,16 @@
             8.14,
             6.99,
             4.24,
-            1.3
+            1.3,
+            0.31
           ]
         },
         "12h": {
-          "mae": 218.93,
-          "mape": 84.13,
+          "mae": 219.09,
+          "mape": 84.16,
           "confidence_score": 0,
           "confidence_label": "Poor",
-          "sample_count": 481,
+          "sample_count": 482,
           "recent_trend": "improving",
           "last_10_errors": [
             20.18,
@@ -569,12 +569,6 @@
       "overall_confidence": 0,
       "overall_label": "Poor",
       "recent_predictions": [
-        {
-          "target_time": "2026-08-22T03:30:00+00:00",
-          "horizon": "12h",
-          "predicted": 231.73,
-          "actual": 171.0
-        },
         {
           "target_time": "2026-08-21T22:15:00+00:00",
           "horizon": "6h",
@@ -747,6 +741,12 @@
           "target_time": "2026-08-22T10:30:00+00:00",
           "horizon": "6h",
           "predicted": 215.17,
+          "actual": 218.0
+        },
+        {
+          "target_time": "2026-08-22T11:15:00+00:00",
+          "horizon": "6h",
+          "predicted": 218.68,
           "actual": 218.0
         }
       ]
